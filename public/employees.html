@@ -1,0 +1,561 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Funcionários - Sistema Folha de Pagamento</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="js/main.js"></script>
+</head>
+
+<body>
+    <div class="layout">
+        <div id="sidebar-container"></div>
+        <script>
+            fetch('sidebar.html')
+                .then(res => res.text())
+                .then(html => {
+                    document.getElementById('sidebar-container').innerHTML = html;
+                    fetch('/api/user-info')
+                        .then(res => res.json())
+                        .then(user => {
+                            if (user.role === 'admin') {
+                                document.getElementById('settingsNav').style.display = 'inline-block';
+                                document.getElementById('usersNav').style.display = 'inline-block';
+                            }
+                        });
+                });
+        </script>
+        <div class="container main-content">
+            <header class="header">
+                <h1>👥 Gerenciar Funcionários</h1>
+            </header>
+            <div id="alert-container"></div>
+
+            <div class="card">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+                    <h2>Lista de Funcionários</h2>
+                    <button onclick="openEmployeeModal()" class="btn btn-success">➕ Novo Funcionário</button>
+                </div>
+
+                <div class="table-container">
+                    <table id="employeesTable">
+                        <thead>
+                            <tr>
+                                <th>Nome</th>
+                                <th>CPF</th>
+                                <th>Cargo</th>
+                                <th>Departamento</th>
+                                <th>Data de Contratação</th>
+                                <th>Salário</th>
+                                <th>Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody id="employeesTableBody">
+                            <tr>
+                                <td colspan="7" class="loading">Carregando funcionários...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <!-- Seção de Cargos -->
+            <div id="adminCargosSection" style="display:none;">
+                <div class="card">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+                        <h2>Gerenciar Cargos</h2>
+                    </div>
+                    <form id="cargoForm" style="display:flex;gap:1rem;align-items:center;">
+                        <input type="text" id="cargoName" class="form-control" placeholder="Novo cargo..." required
+                            style="max-width:300px;">
+                        <button type="submit" class="btn btn-primary">Adicionar Cargo</button>
+                    </form>
+                    <ul id="cargoList" style="margin-top:1rem;list-style:none;padding:0;"></ul>
+                </div>
+            </div>
+        </div>
+
+
+
+        <!-- Modal para Funcionário -->
+        <div id="employeeModal" class="modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3 id="modalTitle">Novo Funcionário</h3>
+                    <button class="close-btn" onclick="closeEmployeeModal()">&times;</button>
+                </div>
+
+                <form id="employeeForm">
+                    <input type="hidden" id="employeeId" name="id">
+
+                    <div class="form-group">
+                        <label for="employeeName">Nome Completo *</label>
+                        <input type="text" id="employeeName" name="name" class="form-control" required>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="employeeCpf">CPF *</label>
+                            <input type="text" id="employeeCpf" name="cpf" class="form-control"
+                                placeholder="000.000.000-00" maxlength="14" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="employeePosition">Cargo *</label>
+                            <select id="employeePosition" name="position" class="form-control" required>
+                                <option value="">Selecione...</option>
+                                <option value="Advogado">Advogado</option>
+                                <option value="Auxiliar Jurídico">Auxiliar Jurídico</option>
+                                <option value="Estagiário">Estagiário</option>
+                                <option value="Assistente Administrativo">Assistente Administrativo</option>
+                                <option value="Secretária">Secretária</option>
+                                <option value="">Outro (digite abaixo)</option>
+                            </select>
+                            <input type="text" id="employeePositionCustom" class="form-control"
+                                placeholder="Outro cargo..." style="display:none; margin-top:0.5rem;" />
+                        </div>
+                        <div class="form-group">
+                            <label for="employeeCbo">CBO *</label>
+                            <input type="text" id="employeeCbo" name="cbo" class="form-control" required
+                                placeholder="Ex: 2124-05">
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="employeeDepartment">Departamento</label>
+                            <input type="text" id="employeeDepartment" name="department" class="form-control">
+                        </div>
+                        <div class="form-group">
+                            <label for="employeeHireDate">Data de Contratação *</label>
+                            <input type="date" id="employeeHireDate" name="hire_date" class="form-control" required>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="employeeSalary">Salário Base (R$) *</label>
+                        <input type="number" id="employeeSalary" name="salary" class="form-control" step="0.01" min="0"
+                            placeholder="0.00" required>
+                    </div>
+
+                    <div style="display: flex; gap: 1rem; justify-content: flex-end; margin-top: 2rem;">
+                        <button type="button" onclick="closeEmployeeModal()" class="btn btn-secondary">Cancelar</button>
+                        <button type="submit" class="btn btn-primary">Salvar</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <div id="alerts-sidebar-container"></div>
+        <script>
+            fetch('alerts-sidebar.html')
+                .then(res => res.text())
+                .then(html => {
+                    document.getElementById('alerts-sidebar-container').innerHTML = html;
+                });
+        </script>
+
+        <script>
+            let employees = [];
+            let editingEmployeeId = null;
+            let cargos = [];
+
+            // Inicializar página
+            document.addEventListener('DOMContentLoaded', function () {
+                checkUserPermissions();
+                loadEmployees();
+                setupCpfMask();
+                setupForm();
+                loadCargos();
+            });
+
+            async function checkUserPermissions() {
+                try {
+                    const response = await fetch('/api/user-info');
+                    const userData = await response.json();
+
+                    // Configurações aparece para todos
+                    // document.getElementById('settingsNav').style.display = 'inline-block'; // Removido
+
+                    // Usuários apenas para admin
+                    if (userData.role === 'admin') {
+                        document.getElementById('usersNav').style.display = 'inline-block';
+                        document.getElementById('adminCargosSection').style.display = '';
+                    } else {
+                        // Esconde a seção de cargos para não-admins
+                        document.getElementById('adminCargosSection').style.display = 'none';
+                    }
+                } catch (error) {
+                    console.error('Erro ao verificar permissões:', error);
+                }
+            }
+
+            function setupCpfMask() {
+                const cpfInput = document.getElementById('employeeCpf');
+                cpfInput.addEventListener('input', function (e) {
+                    let value = e.target.value.replace(/\D/g, '');
+                    value = value.replace(/(\d{3})(\d)/, '$1.$2');
+                    value = value.replace(/(\d{3})(\d)/, '$1.$2');
+                    value = value.replace(/(\d{3})(\d{1,2})$/, '$1-$2');
+                    e.target.value = value;
+                });
+            }
+
+            function setupForm() {
+                const form = document.getElementById('employeeForm');
+                const select = document.getElementById('employeePosition');
+                const customInput = document.getElementById('employeePositionCustom');
+
+                select.addEventListener('change', function () {
+                    if (!select.value) {
+                        customInput.style.display = 'block';
+                        customInput.required = true;
+                    } else {
+                        customInput.style.display = 'none';
+                        customInput.required = false;
+                        customInput.value = '';
+                    }
+                });
+
+                form.addEventListener('submit', function (e) {
+                    if (!select.value && customInput.value) {
+                        // Se custom, copia valor para o select para enviar
+                        select.innerHTML += `<option value="${customInput.value}">${customInput.value}</option>`;
+                        select.value = customInput.value;
+                    }
+                }, true);
+
+                document.getElementById('employeeForm').addEventListener('submit', handleFormSubmit);
+            }
+
+            async function loadEmployees() {
+                try {
+                    const response = await fetch('/api/employees');
+                    employees = await response.json();
+                    renderEmployeesTable();
+                } catch (error) {
+                    console.error('Erro ao carregar funcionários:', error);
+                    showAlert('Erro ao carregar funcionários', 'error');
+                }
+            }
+
+            function renderEmployeesTable() {
+                const tbody = document.getElementById('employeesTableBody');
+
+                if (employees.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="7" class="text-center">Nenhum funcionário cadastrado</td></tr>';
+                    return;
+                }
+
+                tbody.innerHTML = employees.map(employee => `
+                    <tr>
+                        <td>${employee.name}</td>
+                        <td>${formatCpf(employee.cpf)}</td>
+                        <td>${employee.position}</td>
+                        <td>${employee.department || '-'}</td>
+                        <td>${formatDate(employee.hire_date)}</td>
+                        <td>R$ ${parseFloat(employee.salary).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
+                        <td>
+                            <div class="actions">
+                                <button onclick="editEmployee(${employee.id})" class="action-btn edit-btn" title="Editar">
+                                    ✏️
+                                </button>
+                                <button onclick="deleteEmployee(${employee.id})" class="action-btn delete-btn" title="Excluir">
+                                    🗑️
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                `).join('');
+            }
+
+            function openEmployeeModal(employee = null) {
+                const modal = document.getElementById('employeeModal');
+                const form = document.getElementById('employeeForm');
+                const title = document.getElementById('modalTitle');
+
+                editingEmployeeId = employee ? employee.id : null;
+
+                if (employee) {
+                    title.textContent = 'Editar Funcionário';
+                    document.getElementById('employeeId').value = employee.id;
+                    document.getElementById('employeeName').value = employee.name;
+                    document.getElementById('employeeCpf').value = formatCpf(employee.cpf);
+                    document.getElementById('employeePosition').value = employee.position;
+                    document.getElementById('employeeDepartment').value = employee.department || '';
+                    document.getElementById('employeeHireDate').value = employee.hire_date;
+                    document.getElementById('employeeSalary').value = employee.salary;
+                } else {
+                    title.textContent = 'Novo Funcionário';
+                    form.reset();
+                    document.getElementById('employeeId').value = '';
+                }
+
+                modal.classList.add('show');
+            }
+
+            function closeEmployeeModal() {
+                const modal = document.getElementById('employeeModal');
+                modal.classList.remove('show');
+                editingEmployeeId = null;
+            }
+
+            async function handleFormSubmit(e) {
+                e.preventDefault();
+
+                const formData = new FormData(e.target);
+                const employeeData = {
+                    name: formData.get('name'),
+                    cpf: formData.get('cpf').replace(/\D/g, ''), // Remove formatação
+                    position: formData.get('position'),
+                    department: formData.get('department'),
+                    hire_date: formData.get('hire_date'),
+                    salary: parseFloat(formData.get('salary'))
+                };
+
+                try {
+                    let response;
+                    if (editingEmployeeId) {
+                        response = await fetch(`/api/employees/${editingEmployeeId}`, {
+                            method: 'PUT',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(employeeData)
+                        });
+                    } else {
+                        response = await fetch('/api/employees', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(employeeData)
+                        });
+                    }
+
+                    const result = await response.json();
+
+                    if (result.success) {
+                        showAlert(editingEmployeeId ? 'Funcionário atualizado com sucesso!' : 'Funcionário cadastrado com sucesso!', 'success');
+                        closeEmployeeModal();
+                        loadEmployees();
+                    } else {
+                        showAlert(result.error || 'Erro ao salvar funcionário', 'error');
+                    }
+                } catch (error) {
+                    console.error('Erro ao salvar funcionário:', error);
+                    showAlert('Erro ao salvar funcionário', 'error');
+                }
+            }
+
+            function editEmployee(id) {
+                const employee = employees.find(emp => emp.id === id);
+                if (employee) {
+                    openEmployeeModal(employee);
+                }
+            }
+
+            async function deleteEmployee(id) {
+                const employee = employees.find(emp => emp.id === id);
+                if (!employee) return;
+
+                if (!confirm(`Tem certeza que deseja excluir o funcionário "${employee.name}"?`)) {
+                    return;
+                }
+
+                try {
+                    const response = await fetch(`/api/employees/${id}`, {
+                        method: 'DELETE'
+                    });
+
+                    const result = await response.json();
+
+                    if (result.success) {
+                        showAlert('Funcionário excluído com sucesso!', 'success');
+                        loadEmployees();
+                    } else {
+                        showAlert('Erro ao excluir funcionário', 'error');
+                    }
+                } catch (error) {
+                    console.error('Erro ao excluir funcionário:', error);
+                    showAlert('Erro ao excluir funcionário', 'error');
+                }
+            }
+
+            function formatCpf(cpf) {
+                if (!cpf) return '';
+                const cleanCpf = cpf.replace(/\D/g, '');
+                return cleanCpf.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4');
+            }
+
+            function formatDate(dateString) {
+                if (!dateString) return '';
+                const date = new Date(dateString + 'T00:00:00');
+                return date.toLocaleDateString('pt-BR');
+            }
+
+            async function logout() {
+                try {
+                    await fetch('/api/logout', { method: 'POST' });
+                    window.location.href = '/login.html';
+                } catch (error) {
+                    console.error('Erro ao fazer logout:', error);
+                }
+            }
+
+            function showAlert(message, type = 'info') {
+                const alertContainer = document.getElementById('alert-container');
+                const alertDiv = document.createElement('div');
+                alertDiv.className = `alert alert-${type}`;
+                alertDiv.textContent = message;
+
+                alertContainer.appendChild(alertDiv);
+
+                setTimeout(() => {
+                    alertDiv.remove();
+                }, 5000);
+            }
+
+            async function loadCargos() {
+                try {
+                    const response = await fetch('/api/cargos');
+                    cargos = await response.json();
+                    renderCargoList();
+                    renderCargoSelect();
+                } catch (e) {
+                    cargos = [];
+                }
+            }
+
+            function renderCargoList() {
+                const ul = document.getElementById('cargoList');
+                ul.innerHTML = '';
+                cargos.forEach(cargo => {
+                    const li = document.createElement('li');
+                    li.style.display = 'flex';
+                    li.style.justifyContent = 'space-between';
+                    li.style.alignItems = 'center';
+                    li.style.gap = '1rem';
+                    // Nome do cargo à esquerda
+                    const span = document.createElement('span');
+                    span.textContent = cargo;
+                    li.appendChild(span);
+                    // Container para botões à direita
+                    const btnGroup = document.createElement('div');
+                    btnGroup.style.display = 'flex';
+                    btnGroup.style.gap = '0.5rem';
+                    // Botão editar
+                    const editPositionBtn = document.createElement('button');
+                    editPositionBtn.textContent = '✏️';
+                    editPositionBtn.className = 'btn btn-warning btn-sm';
+                    editPositionBtn.onclick = () => {
+                        // Troca para input de edição
+                        const input = document.createElement('input');
+                        input.type = 'text';
+                        input.value = cargo;
+                        input.className = 'form-control';
+                        input.style.maxWidth = '200px';
+                        li.replaceChild(input, span);
+                        input.focus();
+                        // Botão salvar
+                        const saveBtn = document.createElement('button');
+                        saveBtn.textContent = 'Salvar';
+                        saveBtn.className = 'btn btn-success btn-sm';
+                        // Botão cancelar
+                        const cancelBtn = document.createElement('button');
+                        cancelBtn.textContent = 'Cancelar';
+                        cancelBtn.className = 'btn btn-secondary btn-sm';
+                        // Substitui botões do grupo
+                        btnGroup.innerHTML = '';
+                        btnGroup.appendChild(saveBtn);
+                        btnGroup.appendChild(cancelBtn);
+                        saveBtn.onclick = async () => {
+                            const novoNome = input.value.trim();
+                            if (!novoNome || novoNome === cargo) {
+                                li.replaceChild(span, input);
+                                btnGroup.innerHTML = '';
+                                btnGroup.appendChild(editPositionBtn);
+                                btnGroup.appendChild(removePositionBtn);
+                                return;
+                            }
+                            await fetch(`/api/cargos/${encodeURIComponent(cargo)}`, {
+                                method: 'PUT',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ novoNome })
+                            });
+                            loadCargos();
+                        };
+                        cancelBtn.onclick = () => {
+                            li.replaceChild(span, input);
+                            btnGroup.innerHTML = '';
+                            btnGroup.appendChild(editPositionBtn);
+                            btnGroup.appendChild(removePositionBtn);
+                        };
+                    };
+                    // Botão remover
+                    const removePositionBtn = document.createElement('button');
+                    removePositionBtn.textContent = '🗑️';
+                    removePositionBtn.className = 'btn btn-danger btn-sm';
+                    removePositionBtn.onclick = async () => {
+                        await fetch(`/api/cargos/${encodeURIComponent(cargo)}`, { method: 'DELETE' });
+                        loadCargos();
+                    };
+                    btnGroup.appendChild(editPositionBtn);
+                    btnGroup.appendChild(removePositionBtn);
+                    li.appendChild(btnGroup);
+                    ul.appendChild(li);
+                });
+            }
+
+            function renderCargoSelect() {
+                const select = document.getElementById('employeePosition');
+                if (!select) return;
+                const custom = document.getElementById('employeePositionCustom');
+                const current = select.value;
+                select.innerHTML = '<option value="">Selecione...</option>' + cargos.map(c => `<option value="${c}">${c}</option>`).join('') + '<option value="">Outro (digite abaixo)</option>';
+                select.value = cargos.includes(current) ? current : '';
+                if (!select.value && custom && custom.value) {
+                    select.value = custom.value;
+                }
+            }
+
+            document.getElementById('cargoForm').addEventListener('submit', async function (e) {
+                e.preventDefault();
+                const nome = document.getElementById('cargoName').value.trim();
+                if (!nome) return;
+                await fetch('/api/cargos', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ nome })
+                });
+                document.getElementById('cargoName').value = '';
+                loadCargos();
+            });
+
+            async function loadAlerts() {
+                const ul = document.getElementById('recentAlerts');
+                if (!ul) return;
+                ul.innerHTML = '<li>Carregando alertas...</li>';
+                try {
+                    const res = await fetch('/api/alerts');
+                    const alerts = await res.json();
+                    if (!alerts.length) {
+                        ul.innerHTML = '<li>Nenhum alerta recente</li>';
+                        return;
+                    }
+                    ul.innerHTML = alerts.map(a => `<li>${a.message}</li>`).join('');
+                } catch {
+                    ul.innerHTML = '<li>Erro ao carregar alertas</li>';
+                }
+            }
+            loadAlerts();
+            setInterval(loadAlerts, 15000);
+
+        </script>
+    </div>
+</body>
+<div id="footer-container"></div>
+<script>
+    fetch('footer.html')
+        .then(res => res.text())
+        .then(html => {
+            document.getElementById('footer-container').innerHTML = html;
+        });
+</script>
+</html>

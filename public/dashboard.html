@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - Sistema Folha de Pagamento</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="js/main.js"></script>
+</head>
+
+<body>
+    <div class="layout">
+        <div id="sidebar-container"></div>
+        <script>
+            fetch('sidebar.html')
+                .then(res => res.text())
+                .then(html => {
+                    document.getElementById('sidebar-container').innerHTML = html;
+                    fetch('/api/user-info')
+                        .then(res => res.json())
+                        .then(user => {
+                            if (user.role === 'admin') {
+                                document.getElementById('settingsNav').style.display = 'inline-block';
+                                document.getElementById('usersNav').style.display = 'inline-block';
+                            }
+                        });
+                });
+        </script>
+        <div class="container main-content">
+            <header class="header">
+                <h1>📊 Dashboard - Sistema de Folha</h1>
+            </header>
+
+            <div class="card">
+                <h2>Emitir, Exportar e Consultar</h2>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="yearSelect">Ano:</label>
+                        <select id="yearSelect" class="form-control" onchange="loadDashboard()">
+                            <!-- Será preenchido via JavaScript -->
+                        </select>
+                    </div>
+                </div>
+                <div class="quick-actions" style="margin-top: 1.5rem; display: flex; gap: 1.5rem; flex-wrap: wrap;">
+                    <button class="btn btn-primary" onclick="window.location.href='payroll.html'">➕ Emitir Novo Holerite</button>
+                    <button class="btn btn-secondary" id="exportAnnualReportBtn">📊 Exportar Relatório Anual</button>
+                    <button class="btn btn-secondary" onclick="window.location.href='receipts.html'">🧾 Ver Recibos do Ano</button>
+                </div>
+            </div>
+
+            <div class="stats-grid" id="statsGrid">
+                <!-- Será preenchido via JavaScript -->
+            </div>
+
+            <div class="card">
+                <h2>Gastos Mensais</h2>
+                <div style="height: 400px; position: relative;">
+                    <canvas id="monthlyChart"></canvas>
+                </div>
+            </div>
+
+            <div class="card">
+                <h2>Resumo do Ano <span id="currentYear"></span></h2>
+                <div class="table-container">
+                    <table id="summaryTable">
+                        <thead>
+                            <tr>
+                                <th>Mês</th>
+                                <th>Total de Funcionários</th>
+                                <th>Total Gasto</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- Será preenchido via JavaScript -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        <div id="alerts-sidebar-container"></div>
+        <script>
+            fetch('alerts-sidebar.html')
+                .then(res => res.text())
+                .then(html => {
+                    document.getElementById('alerts-sidebar-container').innerHTML = html;
+                });
+        </script>
+    </div>
+    <div id="footer-container"></div>
+    <script>
+        fetch('footer.html')
+            .then(res => res.text())
+            .then(html => {
+                document.getElementById('footer-container').innerHTML = html;
+            });
+    </script>
+
+    <script>
+        const monthNames = [
+            'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
+            'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'
+        ];
+
+        let monthlyChart = null;
+
+        // Inicializar página
+        document.addEventListener('DOMContentLoaded', function () {
+            checkUserPermissions();
+            populateYearSelect();
+            loadDashboard();
+        });
+
+        async function checkUserPermissions() {
+            try {
+                const response = await fetch('/api/user-info');
+                const userData = await response.json();
+
+                // Configurações aparece para todos
+                // document.getElementById('settingsNav').style.display = 'inline-block'; // Removido
+
+                // Usuários apenas para admin
+                if (userData.role === 'admin') {
+                    document.getElementById('usersNav').style.display = 'inline-block';
+                }
+            } catch (error) {
+                console.error('Erro ao verificar permissões:', error);
+            }
+        }
+
+        function populateYearSelect() {
+            const yearSelect = document.getElementById('yearSelect');
+            const currentYear = new Date().getFullYear();
+
+            for (let year = currentYear - 5; year <= currentYear + 1; year++) {
+                const option = document.createElement('option');
+                option.value = year;
+                option.textContent = year;
+                if (year === currentYear) {
+                    option.selected = true;
+                }
+                yearSelect.appendChild(option);
+            }
+        }
+
+        async function loadDashboard() {
+            const year = document.getElementById('yearSelect').value;
+            document.getElementById('currentYear').textContent = year;
+
+            try {
+                // Carregar gastos mensais
+                const response = await fetch(`/api/dashboard/monthly-expenses?year=${year}`);
+                const monthlyData = await response.json();
+
+                // Carregar todos os holerites do ano para calcular estatísticas
+                const payrollResponse = await fetch(`/api/payrolls?year=${year}`);
+                const payrollData = await payrollResponse.json();
+
+                updateStats(monthlyData, payrollData, year);
+                updateChart(monthlyData);
+                updateSummaryTable(monthlyData, payrollData);
+
+            } catch (error) {
+                console.error('Erro ao carregar dashboard:', error);
+                showAlert('Erro ao carregar dados do dashboard', 'error');
+            }
+        }
+
+        function updateStats(monthlyData, payrollData, year) {
+            const totalYear = monthlyData.reduce((sum, month) => sum + parseFloat(month.total_expenses || 0), 0);
+            const totalEmployees = new Set(payrollData.map(p => p.employee_id)).size;
+            const averageMonthlyCost = totalYear / 12;
+            const monthsWithData = monthlyData.filter(m => m.total_expenses > 0).length;
+
+            const statsGrid = document.getElementById('statsGrid');
+            statsGrid.innerHTML = `
+                <div class="stat-card">
+                    <div class="stat-value">R$ ${totalYear.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</div>
+                    <div class="stat-label">Total Gasto no Ano</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">${totalEmployees}</div>
+                    <div class="stat-label">Funcionários Ativos</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">R$ ${averageMonthlyCost.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</div>
+                    <div class="stat-label">Média Mensal</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">${monthsWithData}</div>
+                    <div class="stat-label">Meses com Dados</div>
+                </div>
+            `;
+        }
+
+        function updateChart(monthlyData) {
+            const ctx = document.getElementById('monthlyChart').getContext('2d');
+
+            // Preparar dados para todos os 12 meses
+            const chartData = [];
+            const chartLabels = [];
+
+            for (let i = 1; i <= 12; i++) {
+                const monthData = monthlyData.find(m => m.month === i);
+                chartData.push(monthData ? parseFloat(monthData.total_expenses) : 0);
+                chartLabels.push(monthNames[i - 1]);
+            }
+
+            if (monthlyChart) {
+                monthlyChart.destroy();
+            }
+
+            monthlyChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: chartLabels,
+                    datasets: [{
+                        label: 'Gastos (R$)',
+                        data: chartData,
+                        backgroundColor: 'rgba(55, 65, 81, 0.8)',
+                        borderColor: 'rgba(17, 24, 39, 1)',
+                        borderWidth: 2,
+                        borderRadius: 5
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                callback: function (value) {
+                                    return 'R$ ' + value.toLocaleString('pt-BR');
+                                }
+                            }
+                        }
+                    },
+                    layout: {
+                        padding: {
+                            top: 20,
+                            bottom: 20,
+                            left: 10,
+                            right: 10
+                        }
+                    }
+                }
+            });
+        }
+
+        function updateSummaryTable(monthlyData, payrollData) {
+            const tbody = document.querySelector('#summaryTable tbody');
+            tbody.innerHTML = '';
+
+            let totalYearExpense = 0;
+            let totalYearEmployees = 0;
+
+            for (let i = 1; i <= 12; i++) {
+                const monthData = monthlyData.find(m => m.month === i);
+                const monthPayrolls = payrollData.filter(p => p.month === i);
+                const totalExpense = monthData ? parseFloat(monthData.total_expenses) : 0;
+                const employeeCount = new Set(monthPayrolls.map(p => p.employee_id)).size;
+
+                totalYearExpense += totalExpense;
+                if (employeeCount > totalYearEmployees) {
+                    totalYearEmployees = employeeCount; // Pega o maior número de funcionários do ano
+                }
+
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${monthNames[i - 1]}</td>
+                    <td>${employeeCount}</td>
+                    <td>R$ ${totalExpense.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
+                `;
+                tbody.appendChild(row);
+            }
+
+            // Adicionar linha de total
+            const totalRow = document.createElement('tr');
+            totalRow.style.fontWeight = 'bold';
+            totalRow.style.backgroundColor = '#f3f4f6';
+            totalRow.style.borderTop = '2px solid #374151';
+            totalRow.innerHTML = `
+                <td><strong>TOTAL ANUAL</strong></td>
+                <td><strong>${totalYearEmployees}</strong></td>
+                <td><strong>R$ ${totalYearExpense.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</strong></td>
+            `;
+            tbody.appendChild(totalRow);
+        }
+
+        async function logout() {
+            try {
+                await fetch('/api/logout', { method: 'POST' });
+                window.location.href = '/login.html';
+            } catch (error) {
+                console.error('Erro ao fazer logout:', error);
+            }
+        }
+
+        function showAlert(message, type = 'info') {
+            const alertDiv = document.createElement('div');
+            alertDiv.className = `alert alert-${type}`;
+            alertDiv.textContent = message;
+
+            document.body.insertBefore(alertDiv, document.body.firstChild);
+
+            setTimeout(() => {
+                alertDiv.remove();
+            }, 5000);
+        }
+
+        // Atualizar dados a cada 5 minutos
+        setInterval(loadDashboard, 5 * 60 * 1000);
+
+        // Exportar relatório anual (CSV dos holerites do ano)
+        document.addEventListener('DOMContentLoaded', function () {
+            const exportBtn = document.getElementById('exportAnnualReportBtn');
+            if (exportBtn) {
+                exportBtn.onclick = async function() {
+                    const year = document.getElementById('yearSelect').value;
+                    if (!year) {
+                        showAlert('Selecione um ano para exportar o relatório.', 'error');
+                        return;
+                    }
+                    try {
+                        const response = await fetch(`/api/export/csv?year=${year}`);
+                        if (response.ok) {
+                            const blob = await response.blob();
+                            const url = window.URL.createObjectURL(blob);
+                            const a = document.createElement('a');
+                            a.href = url;
+                            a.download = `holerites_${year}.csv`;
+                            document.body.appendChild(a);
+                            a.click();
+                            document.body.removeChild(a);
+                            window.URL.revokeObjectURL(url);
+                            showAlert('Relatório anual exportado com sucesso!', 'success');
+                        } else {
+                            showAlert('Erro ao exportar relatório anual', 'error');
+                        }
+                    } catch (e) {
+                        showAlert('Erro ao exportar relatório anual', 'error');
+                    }
+                };
+            }
+        });
+
+        async function loadAlerts() {
+            const ul = document.getElementById('recentAlerts');
+            if (!ul) return;
+            ul.innerHTML = '<li>Carregando alertas...</li>';
+            try {
+                const res = await fetch('/api/alerts');
+                const alerts = await res.json();
+                if (!alerts.length) {
+                    ul.innerHTML = '<li>Nenhum alerta recente</li>';
+                    return;
+                }
+                ul.innerHTML = alerts.map(a => `<li>${a.message}</li>`).join('');
+            } catch {
+                ul.innerHTML = '<li>Erro ao carregar alertas</li>';
+            }
+        }
+        loadAlerts();
+        setInterval(loadAlerts, 15000);
+    </script>
+</body>
+
+</html>

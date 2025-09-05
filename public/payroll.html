@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Holerites - Sistema Folha de Pagamento</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+    <div class="layout">
+        <div id="sidebar-container"></div>
+        <script>
+            fetch('sidebar.html')
+                .then(res => res.text())
+                .then(html => {
+                    document.getElementById('sidebar-container').innerHTML = html;
+                    fetch('/api/user-info')
+                        .then(res => res.json())
+                        .then(user => {
+                            if (user.role === 'admin') {
+                                document.getElementById('settingsNav').style.display = 'inline-block';
+                                document.getElementById('usersNav').style.display = 'inline-block';
+                            }
+                        });
+                });
+        </script>
+        <div class="container main-content">
+        <header class="header">
+                <h1>📄 Gerenciar Holerites</h1>
+        </header>
+        <div id="alert-container"></div>
+
+        <div class="card">
+            <h2>Filtros e Ações</h2>
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="filterMonth">Mês:</label>
+                    <select id="filterMonth" class="form-control" onchange="loadPayrolls()">
+                        <option value="">Todos os meses</option>
+                        <option value="1">Janeiro</option>
+                        <option value="2">Fevereiro</option>
+                        <option value="3">Março</option>
+                        <option value="4">Abril</option>
+                        <option value="5">Maio</option>
+                        <option value="6">Junho</option>
+                        <option value="7">Julho</option>
+                        <option value="8">Agosto</option>
+                        <option value="9">Setembro</option>
+                        <option value="10">Outubro</option>
+                        <option value="11">Novembro</option>
+                        <option value="12">Dezembro</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="filterYear">Ano:</label>
+                    <select id="filterYear" class="form-control" onchange="loadPayrolls()">
+                        <!-- Será preenchido via JavaScript -->
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="filterEmployee">Funcionário:</label>
+                    <select id="filterEmployee" class="form-control" onchange="loadPayrolls()">
+                        <option value="">Todos os funcionários</option>
+                        <!-- Será preenchido via JavaScript -->
+                    </select>
+                </div>
+            </div>
+            
+            <div class="export-buttons">
+                <button onclick="openPayrollModal()" class="btn btn-success">➕ Novo Holerite</button>
+                <button onclick="exportToCsv()" class="btn btn-secondary">📊 Exportar CSV</button>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>Lista de Holerites</h2>
+            <div class="table-container">
+                <table id="payrollsTable">
+                    <thead>
+                        <tr>
+                            <th>Funcionário</th>
+                            <th>CPF</th>
+                            <th>Período</th>
+                            <th>Salário Base</th>
+                            <th>Salário Bruto</th>
+                            <th>Salário Líquido</th>
+                            <th>Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody id="payrollsTableBody">
+                        <tr>
+                            <td colspan="7" class="loading">Carregando holerites...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        </div>
+        <div id="alerts-sidebar-container"></div>
+        <script>
+            fetch('alerts-sidebar.html')
+                .then(res => res.text())
+                .then(html => {
+                    document.getElementById('alerts-sidebar-container').innerHTML = html;
+                });
+        </script>
+    </div>
+
+    <!-- Modal para Holerite -->
+    <div id="payrollModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="payrollModalTitle">Novo Holerite</h3>
+                <button class="close-btn" onclick="closePayrollModal()">&times;</button>
+            </div>
+            
+            <form id="payrollForm">
+                <input type="hidden" id="payrollId" name="id">
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="payrollEmployee">Funcionário *</label>
+                        <select id="payrollEmployee" name="employee_id" class="form-control" required
+                            onchange="loadEmployeeSalary()">
+                            <option value="">Selecione um funcionário</option>
+                            <!-- Será preenchido via JavaScript -->
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="payrollMonth">Mês *</label>
+                        <select id="payrollMonth" name="month" class="form-control" required>
+                            <option value="1">Janeiro</option>
+                            <option value="2">Fevereiro</option>
+                            <option value="3">Março</option>
+                            <option value="4">Abril</option>
+                            <option value="5">Maio</option>
+                            <option value="6">Junho</option>
+                            <option value="7">Julho</option>
+                            <option value="8">Agosto</option>
+                            <option value="9">Setembro</option>
+                            <option value="10">Outubro</option>
+                            <option value="11">Novembro</option>
+                            <option value="12">Dezembro</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="payrollYear">Ano *</label>
+                        <select id="payrollYear" name="year" class="form-control" required>
+                            <!-- Será preenchido via JavaScript -->
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="baseSalary">Salário Base (R$) *</label>
+                    <input type="number" id="baseSalary" name="base_salary" class="form-control" step="0.01" min="0"
+                        required onchange="calculateTotals()">
+                </div>
+
+                <h4 style="color: #667eea; margin: 1.5rem 0 1rem 0;">Proventos Adicionais</h4>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="overtimeHours">Horas Extras</label>
+                        <input type="number" id="overtimeHours" name="overtime_hours" class="form-control" step="0.5"
+                            min="0" value="0" onchange="calculateTotals()">
+                    </div>
+                    <div class="form-group">
+                        <label for="overtimeRate">Valor Hora Extra (R$)</label>
+                        <input type="number" id="overtimeRate" name="overtime_rate" class="form-control" step="0.01"
+                            min="0" value="0" onchange="calculateTotals()">
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="bonuses">Bônus (R$)</label>
+                        <input type="number" id="bonuses" name="bonuses" class="form-control" step="0.01" min="0"
+                            value="0" onchange="calculateTotals()">
+                    </div>
+                    <div class="form-group">
+                        <label for="otherBenefits">Outros Benefícios (R$)</label>
+                        <input type="number" id="otherBenefits" name="other_benefits" class="form-control" step="0.01"
+                            min="0" value="0" onchange="calculateTotals()">
+                    </div>
+                </div>
+
+                <h4 style="color: #e53e3e; margin: 1.5rem 0 1rem 0;">Descontos</h4>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="inssDiscount">INSS (R$)</label>
+                        <input type="number" id="inssDiscount" name="inss_discount" class="form-control" step="0.01"
+                            min="0" value="0" onchange="calculateTotals()">
+                    </div>
+                    <div class="form-group">
+                        <label for="irrfDiscount">IRRF (R$)</label>
+                        <input type="number" id="irrfDiscount" name="irrf_discount" class="form-control" step="0.01"
+                            min="0" value="0" onchange="calculateTotals()">
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="healthInsurance">Plano de Saúde (R$)</label>
+                        <input type="number" id="healthInsurance" name="health_insurance" class="form-control" 
+                               step="0.01" min="0" value="0" onchange="calculateTotals()">
+                    </div>
+                    <div class="form-group">
+                        <label for="otherDiscounts">Outros Descontos (R$)</label>
+                        <input type="number" id="otherDiscounts" name="other_discounts" class="form-control" step="0.01"
+                            min="0" value="0" onchange="calculateTotals()">
+                    </div>
+                </div>
+
+                <div style="background: #f7fafc; padding: 1rem; border-radius: 8px; margin: 1.5rem 0;">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label><strong>Salário Bruto:</strong></label>
+                            <div id="grossSalaryDisplay" style="font-size: 1.2rem; color: #667eea; font-weight: bold;">
+                                R$ 0,00</div>
+                        </div>
+                        <div class="form-group">
+                            <label><strong>Salário Líquido:</strong></label>
+                            <div id="netSalaryDisplay" style="font-size: 1.2rem; color: #48bb78; font-weight: bold;">R$
+                                0,00</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div style="display: flex; gap: 1rem; justify-content: flex-end; margin-top: 2rem;">
+                    <button type="button" onclick="closePayrollModal()" class="btn btn-secondary">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">Salvar Holerite</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal de Detalhes do Holerite -->
+    <div id="payrollDetailsModal" class="modal"
+        style="display:none; align-items: flex-start; justify-content: center; padding-top: 5vh;">
+        <div class="modal-content" style="max-width: 500px; margin: auto;">
+            <div class="modal-header">
+                <h3>Detalhes do Holerite</h3>
+                <button class="close-btn" onclick="closePayrollDetailsModal()">&times;</button>
+            </div>
+            <div id="payrollDetailsContent" style="padding:1rem;"></div>
+        </div>
+    </div>
+
+    <!-- Modal de Confirmação de Exclusão do Holerite -->
+    <div id="deletePayrollModal" class="modal" style="display:none; align-items: flex-start; justify-content: center; padding-top: 5vh;">
+        <div class="modal-content" style="max-width: 400px; margin: auto;">
+            <div class="modal-header">
+                <h3>Confirmar Exclusão</h3>
+                <button class="close-btn" onclick="closeDeletePayrollModal()">&times;</button>
+            </div>
+            <div id="deletePayrollContent" style="padding:1rem;">
+                Tem certeza que deseja excluir este holerite?
+            </div>
+            <div style="display: flex; gap: 1rem; justify-content: flex-end; margin-top: 2rem;">
+                <button type="button" class="btn btn-secondary" onclick="closeDeletePayrollModal()">Cancelar</button>
+                <button type="button" class="btn btn-danger" id="confirmDeletePayrollBtn">Excluir</button>
+            </div>
+        </div>
+    </div>
+
+
+            <script src="js/main.js"></script>
+    <script>
+        async function loadAlerts() {
+            const ul = document.getElementById('recentAlerts');
+            if (!ul) return;
+            ul.innerHTML = '<li>Carregando alertas...</li>';
+            try {
+                const res = await fetch('/api/alerts');
+                const alerts = await res.json();
+                if (!alerts.length) {
+                    ul.innerHTML = '<li>Nenhum alerta recente</li>';
+                return;
+                }
+                ul.innerHTML = alerts.map(a => `<li>${a.message}</li>`).join('');
+            } catch {
+                ul.innerHTML = '<li>Erro ao carregar alertas</li>';
+            }
+        }
+        loadAlerts();
+        setInterval(loadAlerts, 15000);
+    </script>
+    <div id="footer-container"></div>
+    <script>
+      fetch('footer.html')
+        .then(res => res.text())
+        .then(html => {
+          document.getElementById('footer-container').innerHTML = html;
+        });
+    </script>
+</body>
+
+</html>

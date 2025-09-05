@@ -1,0 +1,451 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Configurações - Sistema Folha de Pagamento</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="js/main.js"></script>
+</head>
+
+<body>
+    <div class="layout">
+        <div id="sidebar-container"></div>
+        <script>
+            fetch('sidebar.html')
+                .then(res => res.text())
+                .then(html => {
+                    document.getElementById('sidebar-container').innerHTML = html;
+                    fetch('/api/user-info')
+                        .then(res => res.json())
+                        .then(user => {
+                            if (user.role === 'admin') {
+                                document.getElementById('settingsNav').style.display = 'inline-block';
+                                document.getElementById('usersNav').style.display = 'inline-block';
+                            }
+                        });
+                });
+        </script>
+        <div class="container main-content">
+            <header class="header">
+                <h1>⚙️ Configurações do Sistema</h1>
+            </header>
+            <div id="alert-container"></div>
+
+            <!-- Configurações da Empresa -->
+            <div class="card">
+                <h2>📊 Dados da Empresa</h2>
+                <p>Configure os dados da sua empresa que aparecerão nos holerites e relatórios.</p>
+
+                <form id="companyForm">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="companyName">Nome da Empresa *</label>
+                            <input type="text" id="companyName" name="company_name" class="form-control" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="cnpj">CNPJ</label>
+                            <input type="text" id="cnpj" name="cnpj" class="form-control"
+                                placeholder="00.000.000/0000-00" maxlength="18">
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="address">Endereço</label>
+                        <input type="text" id="address" name="address" class="form-control"
+                            placeholder="Rua, número, complemento">
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="city">Cidade</label>
+                            <input type="text" id="city" name="city" class="form-control">
+                        </div>
+                        <div class="form-group">
+                            <label for="state">Estado</label>
+                            <select id="state" name="state" class="form-control">
+                                <option value="">Selecione...</option>
+                                <option value="AC">Acre</option>
+                                <option value="AL">Alagoas</option>
+                                <option value="AP">Amapá</option>
+                                <option value="AM">Amazonas</option>
+                                <option value="BA">Bahia</option>
+                                <option value="CE">Ceará</option>
+                                <option value="DF">Distrito Federal</option>
+                                <option value="ES">Espírito Santo</option>
+                                <option value="GO">Goiás</option>
+                                <option value="MA">Maranhão</option>
+                                <option value="MT">Mato Grosso</option>
+                                <option value="MS">Mato Grosso do Sul</option>
+                                <option value="MG">Minas Gerais</option>
+                                <option value="PA">Pará</option>
+                                <option value="PB">Paraíba</option>
+                                <option value="PR">Paraná</option>
+                                <option value="PE">Pernambuco</option>
+                                <option value="PI">Piauí</option>
+                                <option value="RJ">Rio de Janeiro</option>
+                                <option value="RN">Rio Grande do Norte</option>
+                                <option value="RS">Rio Grande do Sul</option>
+                                <option value="RO">Rondônia</option>
+                                <option value="RR">Roraima</option>
+                                <option value="SC">Santa Catarina</option>
+                                <option value="SP">São Paulo</option>
+                                <option value="SE">Sergipe</option>
+                                <option value="TO">Tocantins</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="zipCode">CEP</label>
+                            <input type="text" id="zipCode" name="zip_code" class="form-control" placeholder="00000-000"
+                                maxlength="9">
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="phone">Telefone</label>
+                            <input type="text" id="phone" name="phone" class="form-control"
+                                placeholder="(00) 00000-0000">
+                        </div>
+                        <div class="form-group">
+                            <label for="email">Email</label>
+                            <input type="email" id="email" name="email" class="form-control">
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="website">Website</label>
+                        <input type="url" id="website" name="website" class="form-control"
+                            placeholder="https://www.suaempresa.com.br">
+                    </div>
+
+                    <div style="margin-top: 2rem;">
+                        <button type="submit" class="btn btn-primary">💾 Salvar Configurações</button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Configurações do Sistema -->
+            <div class="card">
+                <h2>👥 Usuários do Sistema</h2>
+                <p>Gerencie os usuários que podem acessar este sistema de folha de pagamento.</p>
+
+                <div style="margin-bottom: 1rem;">
+                    <a href="users.html" class="btn btn-secondary">👥 Gerenciar Usuários</a>
+                </div>
+
+                <div class="alert alert-info">
+                    <strong>💡 Dica:</strong> Use a página de usuários para criar contas para outros funcionários que
+                    precisam acessar o sistema, como gestores de RH ou contadores.
+                </div>
+            </div>
+
+            <!-- Configurações de Backup -->
+            <div class="card">
+                <h2>💾 Backup e Dados</h2>
+                <p>Mantenha seus dados seguros com backups regulares.</p>
+
+                <div class="alert alert-info">
+                    <strong>📍 Localização do Banco de Dados:</strong><br>
+                    O arquivo <code>folha_pagamento.db</code> contém todos os dados do sistema.<br>
+                    Faça backup regular deste arquivo para manter seus dados seguros.
+                </div>
+
+                <div style="margin-top: 1rem;">
+                    <p><strong>Recomendações:</strong></p>
+                    <ul>
+                        <li>Faça backup semanal do arquivo <code>folha_pagamento.db</code></li>
+                        <li>Armazene backups em local seguro (drive externo, nuvem)</li>
+                        <li>Teste a restauração dos backups periodicamente</li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Configurações do Logotipo -->
+            <div class="card">
+                <h2>🎨 Logotipo da Empresa</h2>
+                <p>Configure o logotipo que aparece no sistema e nos holerites.</p>
+                <div class="alert alert-info">
+                    <strong>📁 Como adicionar seu logotipo:</strong><br>
+                    1. Para o sistema web: substitua <code>public/assets/logo-placeholder.svg</code><br>
+                    2. Para PDFs dos holerites: adicione <code>public/assets/logo.png</code><br><br>
+                    <strong>Formatos recomendados:</strong><br>
+                    • Web: SVG ou PNG (120x60px)<br>
+                    • PDF: PNG (300x150px para alta qualidade)
+                </div>
+                <div style="margin-top: 1rem;">
+                    <input type="file" id="logoUpload" accept="image/png, image/svg+xml, image/jpeg"
+                        style="display:inline-block;">
+                    <button id="uploadLogoBtn" class="btn btn-primary" style="margin-left: 0.5rem;">Enviar nova
+                        logo</button>
+                    <span id="logoUploadStatus" style="margin-left: 1rem;"></span>
+                </div>
+                <div style="margin-top: 1rem;">
+                    <img id="previewLogo" src="assets/logo-placeholder.png" alt="Pré-visualização da Logo"
+                        style="max-height:60px; background:#fff; border:1px solid #ccc; padding:4px;">
+                </div>
+            </div>
+        </div>
+        <div id="alerts-sidebar-container"></div>
+        <script>
+            fetch('alerts-sidebar.html')
+                .then(res => res.text())
+                .then(html => {
+                    document.getElementById('alerts-sidebar-container').innerHTML = html;
+                });
+        </script>
+    </div>
+
+    <div id="footer-container"></div>
+    <script>
+        fetch('footer.html')
+            .then(res => res.text())
+            .then(html => {
+                document.getElementById('footer-container').innerHTML = html;
+            });
+    </script>
+
+    <script>
+        let currentUser = null;
+
+        // Inicializar página
+        document.addEventListener('DOMContentLoaded', function () {
+            checkUserPermissions();
+            loadCompanySettings();
+            setupMasks();
+            setupForm();
+            setupLogoUpload();
+        });
+
+        async function checkUserPermissions() {
+            try {
+                const response = await fetch('/api/user-info');
+                const userData = await response.json();
+                currentUser = userData;
+
+                // Configurações aparece para todos
+                // document.getElementById('settingsNav').style.display = 'inline-block'; // Removido
+
+                // Usuários apenas para admin
+                if (userData.role === 'admin') {
+                    document.getElementById('usersNav').style.display = 'inline-block';
+                }
+            } catch (error) {
+                console.error('Erro ao verificar permissões:', error);
+                window.location.href = '/login.html';
+            }
+        }
+
+        function setupMasks() {
+            // Máscara CNPJ
+            const cnpjInput = document.getElementById('cnpj');
+            cnpjInput.addEventListener('input', function (e) {
+                let value = e.target.value.replace(/\D/g, '');
+                value = value.replace(/^(\d{2})(\d)/, '$1.$2');
+                value = value.replace(/^(\d{2})\.(\d{3})(\d)/, '$1.$2.$3');
+                value = value.replace(/\.(\d{3})(\d)/, '.$1/$2');
+                value = value.replace(/(\d{4})(\d)/, '$1-$2');
+                e.target.value = value;
+            });
+
+            // Máscara CEP
+            const cepInput = document.getElementById('zipCode');
+            cepInput.addEventListener('input', function (e) {
+                let value = e.target.value.replace(/\D/g, '');
+                value = value.replace(/^(\d{5})(\d)/, '$1-$2');
+                e.target.value = value;
+            });
+
+            // Máscara Telefone
+            const phoneInput = document.getElementById('phone');
+            phoneInput.addEventListener('input', function (e) {
+                let value = e.target.value.replace(/\D/g, '');
+                if (value.length >= 11) {
+                    value = value.replace(/^(\d{2})(\d{5})(\d{4})/, '($1) $2-$3');
+                } else if (value.length >= 7) {
+                    value = value.replace(/^(\d{2})(\d{4})(\d)/, '($1) $2-$3');
+                } else if (value.length >= 3) {
+                    value = value.replace(/^(\d{2})(\d)/, '($1) $2');
+                }
+                e.target.value = value;
+            });
+        }
+
+        function setupForm() {
+            document.getElementById('companyForm').addEventListener('submit', handleFormSubmit);
+        }
+
+        async function loadCompanySettings() {
+            try {
+                const response = await fetch('/api/company-settings');
+                if (response.status === 403) {
+                    showAlert('Acesso negado', 'error');
+                    return;
+                }
+
+                const data = await response.json();
+
+                if (data.company_name) {
+                    document.getElementById('companyName').value = data.company_name || '';
+                    document.getElementById('cnpj').value = formatCnpj(data.cnpj) || '';
+                    document.getElementById('address').value = data.address || '';
+                    document.getElementById('city').value = data.city || '';
+                    document.getElementById('state').value = data.state || '';
+                    document.getElementById('zipCode').value = formatCep(data.zip_code) || '';
+                    document.getElementById('phone').value = data.phone || '';
+                    document.getElementById('email').value = data.email || '';
+                    document.getElementById('website').value = data.website || '';
+                }
+            } catch (error) {
+                console.error('Erro ao carregar configurações:', error);
+                showAlert('Erro ao carregar configurações', 'error');
+            }
+        }
+
+        async function handleFormSubmit(e) {
+            e.preventDefault();
+
+            const formData = new FormData(e.target);
+            const settingsData = {};
+
+            for (let [key, value] of formData.entries()) {
+                settingsData[key] = value;
+            }
+
+            // Limpar formatação do CNPJ e CEP
+            settingsData.cnpj = settingsData.cnpj.replace(/\D/g, '');
+            settingsData.zip_code = settingsData.zip_code.replace(/\D/g, '');
+            settingsData.phone = settingsData.phone.replace(/\D/g, '');
+
+            try {
+                const response = await fetch('/api/company-settings', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(settingsData)
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    showAlert('Configurações salvas com sucesso!', 'success');
+                } else {
+                    showAlert(result.error || 'Erro ao salvar configurações', 'error');
+                }
+            } catch (error) {
+                console.error('Erro ao salvar configurações:', error);
+                showAlert('Erro ao salvar configurações', 'error');
+            }
+        }
+
+        function formatCnpj(cnpj) {
+            if (!cnpj) return '';
+            const cleanCnpj = cnpj.replace(/\D/g, '');
+            if (cleanCnpj.length !== 14) return cnpj;
+            return cleanCnpj.replace(/(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})/, '$1.$2.$3/$4-$5');
+        }
+
+        function formatCep(cep) {
+            if (!cep) return '';
+            const cleanCep = cep.replace(/\D/g, '');
+            if (cleanCep.length !== 8) return cep;
+            return cleanCep.replace(/(\d{5})(\d{3})/, '$1-$2');
+        }
+
+        async function logout() {
+            try {
+                await fetch('/api/logout', { method: 'POST' });
+                window.location.href = '/login.html';
+            } catch (error) {
+                console.error('Erro ao fazer logout:', error);
+            }
+        }
+
+        function showAlert(message, type = 'info') {
+            const alertContainer = document.getElementById('alert-container');
+            const alertDiv = document.createElement('div');
+            alertDiv.className = `alert alert-${type}`;
+            alertDiv.textContent = message;
+
+            alertContainer.appendChild(alertDiv);
+
+            setTimeout(() => {
+                alertDiv.remove();
+            }, 5000);
+        }
+
+        function setupLogoUpload() {
+            const uploadBtn = document.getElementById('uploadLogoBtn');
+            const fileInput = document.getElementById('logoUpload');
+            const statusSpan = document.getElementById('logoUploadStatus');
+            const previewLogo = document.getElementById('previewLogo');
+
+            // Preview instantâneo
+            fileInput.addEventListener('change', function () {
+                if (fileInput.files && fileInput.files[0]) {
+                    const reader = new FileReader();
+                    reader.onload = function (e) {
+                        previewLogo.src = e.target.result;
+                    };
+                    reader.readAsDataURL(fileInput.files[0]);
+                }
+            });
+
+            uploadBtn.addEventListener('click', async function () {
+                if (!fileInput.files || !fileInput.files[0]) {
+                    statusSpan.textContent = 'Selecione uma imagem.';
+                    statusSpan.style.color = 'red';
+                    return;
+                }
+                const formData = new FormData();
+                formData.append('logo', fileInput.files[0]);
+                statusSpan.textContent = 'Enviando...';
+                statusSpan.style.color = '#333';
+                try {
+                    const response = await fetch('/api/upload-logo', {
+                        method: 'POST',
+                        body: formData
+                    });
+                    const result = await response.json();
+                    if (result.success) {
+                        statusSpan.textContent = 'Logo atualizada!';
+                        statusSpan.style.color = 'green';
+                        // Forçar reload da logo em todos os lugares
+                        document.querySelectorAll('#companyLogo, #previewLogo').forEach(img => {
+                            img.src = 'assets/logo-placeholder.png?' + Date.now();
+                        });
+                    } else {
+                        statusSpan.textContent = result.error || 'Erro ao enviar logo.';
+                        statusSpan.style.color = 'red';
+                        // Restaurar preview para logo atual do sistema
+                        previewLogo.src = 'assets/logo-placeholder.png?' + Date.now();
+                    }
+                } catch (err) {
+                    statusSpan.textContent = 'Erro ao enviar logo.';
+                    statusSpan.style.color = 'red';
+                }
+            });
+        }
+
+        async function loadAlerts() {
+            const ul = document.getElementById('recentAlerts');
+            if (!ul) return;
+            ul.innerHTML = '<li>Carregando alertas...</li>';
+            try {
+                const res = await fetch('/api/alerts');
+                const alerts = await res.json();
+                if (!alerts.length) {
+                    ul.innerHTML = '<li>Nenhum alerta recente</li>';
+                    return;
+                }
+                ul.innerHTML = alerts.map(a => `<li>${a.message}</li>`).join('');
+            } catch {
+                ul.innerHTML = '<li>Erro ao carregar alertas</li>';
+            }
+        }
+        loadAlerts();
+        setInterval(loadAlerts, 15000);
+    </script>
+</body>
+
+</html>

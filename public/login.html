@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - Sistema Folha de Pagamento</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        .login-layout {
+            display: flex;
+            min-height: 100vh;
+            background: linear-gradient(135deg, #111827 0%, #374151 100%);
+        }
+        .login-left {
+            flex: 1 1 50%;
+            background: #23293a;
+            color: #fff;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 2rem;
+        }
+        .login-left h1 {
+            font-size: 2.5rem;
+            font-weight: bold;
+            letter-spacing: 1px;
+            margin-bottom: 1rem;
+        }
+        .login-right {
+            flex: 1 1 50%;
+            background: #fff;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 2rem;
+        }
+        .login-form {
+            width: 100%;
+            max-width: 350px;
+            background: #f7fafc;
+            border-radius: 16px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.10);
+            padding: 2.5rem 2rem 2rem 2rem;
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+        .login-form label {
+            color: #374151;
+            font-weight: 500;
+            margin-bottom: 0.5rem;
+            display: block;
+            text-align: left;
+        }
+        .login-form input {
+            padding: 0.75rem;
+            border-radius: 8px;
+            border: 1.5px solid #e2e8f0;
+            font-size: 1rem;
+            width: 100%;
+            margin-bottom: 0.2rem;
+            box-sizing: border-box;
+            display: block;
+        }
+        .login-form .form-group {
+            display: flex;
+            flex-direction: column;
+            align-items: stretch;
+            margin-bottom: 0.5rem;
+        }
+        .login-form button {
+            margin-top: 1rem;
+            padding: 0.9rem 0;
+            border-radius: 8px;
+            background: #374151;
+            color: #fff;
+            font-size: 1.1rem;
+            font-weight: 600;
+            border: none;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .login-form button:hover {
+            background: #23293a;
+        }
+        .login-error {
+            color: #e53e3e;
+            background: #fed7d7;
+            border-radius: 8px;
+            padding: 0.7rem 1rem;
+            margin-bottom: 0.5rem;
+            text-align: center;
+        }
+        @media (max-width: 900px) {
+            .login-layout {
+                flex-direction: column;
+            }
+            .login-left, .login-right {
+                flex: 1 1 100%;
+                min-height: 220px;
+            }
+            .login-left {
+                padding: 2rem 1rem;
+            }
+            .login-right {
+                padding: 2rem 1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="login-layout">
+        <div class="login-left">
+            <h1>Sistema Folha de Pagamento</h1>
+            <p style="font-size:1.2rem; color:#cbd5e1; max-width: 340px; text-align: center;">Gerencie funcionários, holerites e benefícios de forma simples, rápida e segura.</p>
+        </div>
+        <div class="login-right">
+            <form class="login-form" id="loginForm">
+                <div class="form-group">
+                    <label for="username">Usuário</label>
+                    <input type="text" id="username" name="username" required autocomplete="username">
+                </div>
+                <div class="form-group">
+                    <label for="password">Senha</label>
+                    <input type="password" id="password" name="password" required autocomplete="current-password">
+                </div>
+                <div id="loginError" class="login-error" style="display:none;"></div>
+                <button type="submit">Entrar</button>
+                <a href="#" id="forgotPasswordLink" style="margin-top:1rem; color:#374151; text-align:center; text-decoration:underline; font-size:0.98rem; display:block;">Esqueci minha senha</a>
+            </form>
+
+            <!-- Modal de recuperação de senha -->
+            <div id="forgotPasswordModal" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.35); z-index:1000; align-items:center; justify-content:center;">
+                <div style="background:#fff; border-radius:14px; max-width:350px; width:90%; margin:auto; box-shadow:0 8px 32px rgba(0,0,0,0.10); padding:2rem 1.5rem; display:flex; flex-direction:column; gap:1.2rem; position:relative;">
+                    <button id="closeForgotModal" style="position:absolute; top:10px; right:14px; background:none; border:none; font-size:1.5rem; color:#374151; cursor:pointer;">&times;</button>
+                    <h2 style="font-size:1.3rem; color:#374151; margin-bottom:0.5rem;">Recuperar Senha</h2>
+                    <p style="font-size:1rem; color:#374151;">Informe seu e-mail cadastrado para receber instruções de recuperação.</p>
+                    <input type="email" id="forgotEmail" placeholder="Seu e-mail" style="padding:0.7rem; border-radius:8px; border:1.5px solid #e2e8f0; font-size:1rem;">
+                    <button id="sendForgotBtn" style="background:#374151; color:#fff; border:none; border-radius:8px; padding:0.8rem 0; font-size:1.05rem; font-weight:600; cursor:pointer;">Enviar</button>
+                    <div id="forgotMsg" style="display:none; color:#10b981; text-align:center; font-size:0.98rem; margin-top:0.5rem;"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script>
+        document.getElementById('loginForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            const errorDiv = document.getElementById('loginError');
+            errorDiv.style.display = 'none';
+            try {
+                const response = await fetch('/api/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username, password })
+                });
+                const result = await response.json();
+                if (result.success) {
+                    window.location.href = '/dashboard.html';
+                } else {
+                    errorDiv.textContent = result.error || 'Usuário ou senha inválidos.';
+                    errorDiv.style.display = 'block';
+                }
+            } catch (err) {
+                errorDiv.textContent = 'Erro ao conectar ao servidor.';
+                errorDiv.style.display = 'block';
+            }
+        });
+
+        // Esqueci minha senha - modal
+        document.getElementById('forgotPasswordLink').onclick = function(e) {
+            e.preventDefault();
+            document.getElementById('forgotPasswordModal').style.display = 'flex';
+            document.getElementById('forgotMsg').style.display = 'none';
+            document.getElementById('forgotEmail').value = '';
+        };
+        document.getElementById('closeForgotModal').onclick = function() {
+            document.getElementById('forgotPasswordModal').style.display = 'none';
+        };
+        document.getElementById('sendForgotBtn').onclick = function() {
+            const email = document.getElementById('forgotEmail').value.trim();
+            const msg = document.getElementById('forgotMsg');
+            if (!email || !email.includes('@')) {
+                msg.textContent = 'Digite um e-mail válido.';
+                msg.style.color = '#e53e3e';
+                msg.style.display = 'block';
+                return;
+            }
+            // Simula envio
+            msg.textContent = 'Se este e-mail estiver cadastrado, você receberá instruções em instantes.';
+            msg.style.color = '#10b981';
+            msg.style.display = 'block';
+        };
+    </script>
+</body>
+</html>

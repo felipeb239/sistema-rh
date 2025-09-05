@@ -1,0 +1,24 @@
+<aside class="alerts-sidebar">
+    <h3>🔔 Alertas Recentes</h3>
+    <ul id="recentAlerts" class="alerts-list"></ul>
+</aside>
+<script>
+  async function loadAlerts() {
+    const ul = document.getElementById('recentAlerts');
+    if (!ul) return;
+    ul.innerHTML = '<li>Carregando alertas...</li>';
+    try {
+      const res = await fetch('/api/alerts');
+      const alerts = await res.json();
+      if (!alerts.length) {
+        ul.innerHTML = '<li>Nenhum alerta recente</li>';
+        return;
+      }
+      ul.innerHTML = alerts.map(a => `<li>${a.message}</li>`).join('');
+    } catch {
+      ul.innerHTML = '<li>Erro ao carregar alertas</li>';
+    }
+  }
+  loadAlerts();
+  setInterval(loadAlerts, 15000);
+</script>

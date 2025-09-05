@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Recibos - Sistema Folha de Pagamento</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="js/main.js"></script>
+</head>
+
+<body>
+    <div class="layout">
+        <div id="sidebar-container"></div>
+        <script>
+            fetch('sidebar.html')
+                .then(res => res.text())
+                .then(html => {
+                    document.getElementById('sidebar-container').innerHTML = html;
+                    fetch('/api/user-info')
+                        .then(res => res.json())
+                        .then(user => {
+                            if (user.role === 'admin') {
+                                document.getElementById('settingsNav').style.display = 'inline-block';
+                                document.getElementById('usersNav').style.display = 'inline-block';
+                            }
+                        });
+                });
+        </script>
+        <div class="container main-content">
+            <header class="header">
+                <h1>🧾 Gerenciar Recibos</h1>
+            </header>
+
+            <div id="alert-container"></div>
+
+            <div class="card">
+                <h2>Cadastro de Recibo</h2>
+                <form id="receiptForm">
+                    <div class="form-row"
+                        style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 1.5rem;">
+                        <div class="form-group">
+                            <label for="receiptEmployee">Funcionário *</label>
+                            <select id="receiptEmployee" name="employee_id" class="form-control" required>
+                                <option value="">Selecione um funcionário</option>
+                                <!-- Preenchido via JS -->
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="receiptType">Tipo de Recibo *</label>
+                            <select id="receiptType" name="type" class="form-control" required>
+                                <option value="">Selecione...</option>
+                                <option value="vale_transporte">Vale Transporte</option>
+                                <option value="vale_alimentacao">Vale Alimentação</option>
+                                <option value="vale_combustivel">Vale Combustível</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="receiptMonth">Mês *</label>
+                            <select id="receiptMonth" name="month" class="form-control" required>
+                                <option value="1">Janeiro</option>
+                                <option value="2">Fevereiro</option>
+                                <option value="3">Março</option>
+                                <option value="4">Abril</option>
+                                <option value="5">Maio</option>
+                                <option value="6">Junho</option>
+                                <option value="7">Julho</option>
+                                <option value="8">Agosto</option>
+                                <option value="9">Setembro</option>
+                                <option value="10">Outubro</option>
+                                <option value="11">Novembro</option>
+                                <option value="12">Dezembro</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="receiptYear">Ano *</label>
+                            <select id="receiptYear" name="year" class="form-control" required>
+                                <!-- Preenchido via JS -->
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="receiptDailyValue">Valor Diário (R$) *</label>
+                            <input type="number" id="receiptDailyValue" name="daily_value" class="form-control"
+                                step="0.01" min="0" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="receiptDays">Qtd de Dias *</label>
+                            <input type="number" id="receiptDays" name="days" class="form-control" step="1" min="1"
+                                required>
+                        </div>
+                        <div class="form-group">
+                            <label for="receiptValue">Valor Total (R$) *</label>
+                            <input type="number" id="receiptValue" name="value" class="form-control" step="0.01" min="0"
+                                required readonly>
+                        </div>
+                    </div>
+                    <div style="display: flex; gap: 1rem; justify-content: flex-end; margin-top: 2rem;">
+                        <button type="submit" class="btn btn-primary">Salvar Recibo</button>
+                    </div>
+                </form>
+            </div>
+
+            <div class="card">
+                <h2>Lista de Recibos</h2>
+                <div style="display: flex; gap: 1.5rem; align-items: center; margin-bottom: 1rem; flex-wrap: wrap;">
+                    <div class="form-group">
+                        <label for="filterYear">Ano:</label>
+                        <select id="filterYear" class="form-control" style="min-width: 120px;"></select>
+                    </div>
+                    <div class="form-group">
+                        <label for="filterMonth">Mês:</label>
+                        <select id="filterMonth" class="form-control" style="min-width: 120px;">
+                            <option value="">Todos</option>
+                            <option value="1">Janeiro</option>
+                            <option value="2">Fevereiro</option>
+                            <option value="3">Março</option>
+                            <option value="4">Abril</option>
+                            <option value="5">Maio</option>
+                            <option value="6">Junho</option>
+                            <option value="7">Julho</option>
+                            <option value="8">Agosto</option>
+                            <option value="9">Setembro</option>
+                            <option value="10">Outubro</option>
+                            <option value="11">Novembro</option>
+                            <option value="12">Dezembro</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="filterEmployee">Funcionário:</label>
+                        <select id="filterEmployee" class="form-control" style="min-width: 180px;">
+                            <option value="">Todos</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="filterType">Tipo:</label>
+                        <select id="filterType" class="form-control" style="min-width: 160px;">
+                            <option value="">Todos</option>
+                            <option value="vale_transporte">Vale Transporte</option>
+                            <option value="vale_alimentacao">Vale Alimentação</option>
+                            <option value="vale_combustivel">Vale Combustível</option>
+                        </select>
+                    </div>
+                    <button id="filterBtn" class="btn btn-primary">Filtrar</button>
+                </div>
+                <div class="table-container">
+                    <table id="receiptsTable">
+                        <thead>
+                            <tr>
+                                <th><input type="checkbox" id="selectAllReceipts"></th>
+                                <th>Funcionário</th>
+                                <th>Tipo</th>
+                                <th>Período</th>
+                                <th>Valor</th>
+                                <th>Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody id="receiptsTableBody">
+                            <tr>
+                                <td colspan="6" class="loading">Carregando recibos...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div id="receiptsPagination"
+                    style="display: flex; gap: 0.5rem; justify-content: center; margin: 1.5rem 0 0.5rem 0;"></div>
+                <div class="export-buttons" style="margin-top: 1rem;">
+                    <button onclick="exportReceiptsToCsv()" class="btn btn-secondary">📊 Exportar CSV</button>
+                    <button onclick="exportReceiptsToPdf()" class="btn btn-secondary">📄 Exportar PDF</button>
+                </div>
+            </div>
+        </div>
+        <div id="alerts-sidebar-container"></div>
+        <script>
+            fetch('alerts-sidebar.html')
+                .then(res => res.text())
+                .then(html => {
+                    document.getElementById('alerts-sidebar-container').innerHTML = html;
+                });
+        </script>
+    </div>
+    <div id="footer-container"></div>
+    <script>
+        fetch('footer.html')
+            .then(res => res.text())
+            .then(html => {
+                document.getElementById('footer-container').innerHTML = html;
+            });
+    </script>
+    <script type="module" src="js/receipts.js"></script>
+    <!-- Modal de Confirmação de Exclusão de Recibo -->
+    <div id="deleteReceiptModal" class="modal" style="display:none; align-items: flex-start; justify-content: center; padding-top: 5vh;">
+        <div class="modal-content" style="max-width: 400px; margin: auto;">
+            <div class="modal-header">
+                <h3>Confirmar Exclusão</h3>
+                <button class="close-btn" onclick="closeDeleteReceiptModal()">&times;</button>
+            </div>
+            <div id="deleteReceiptContent" style="padding:1rem;">
+                Tem certeza que deseja excluir este recibo?
+            </div>
+            <div style="display: flex; gap: 1rem; justify-content: flex-end; margin-top: 2rem;">
+                <button type="button" class="btn btn-secondary" onclick="closeDeleteReceiptModal()">Cancelar</button>
+                <button type="button" class="btn btn-danger" id="confirmDeleteReceiptBtn">Excluir</button>
+            </div>
+        </div>
+    </div>
+</body>
+
+</html>

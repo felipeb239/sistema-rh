@@ -1,0 +1,14 @@
+{
+  "watch": [
+    "server.js",
+    "public/"
+  ],
+  "ext": "js,html,css",
+  "ignore": [
+    "node_modules/",
+    "folha_pagamento.db",
+    "*.log",
+    "temp_*"
+  ],
+  "delay": "1000"
+}

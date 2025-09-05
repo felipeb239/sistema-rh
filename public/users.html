@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Usuários - Sistema Folha de Pagamento</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="js/main.js"></script>
+</head>
+
+<body>
+    <div class="layout">
+        <div id="sidebar-container"></div>
+        <script>
+            fetch('sidebar.html')
+                .then(res => res.text())
+                .then(html => {
+                    document.getElementById('sidebar-container').innerHTML = html;
+                    fetch('/api/user-info')
+                        .then(res => res.json())
+                        .then(user => {
+                            if (user.role === 'admin') {
+                                document.getElementById('settingsNav').style.display = 'inline-block';
+                                document.getElementById('usersNav').style.display = 'inline-block';
+                            }
+                        });
+                });
+        </script>
+        <div class="container main-content">
+            <header class="header">
+                <h1>👥 Gerenciar Usuários</h1>
+            </header>
+            <div id="alert-container"></div>
+
+            <div class="card">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+                    <h2>Lista de Usuários</h2>
+                    <button onclick="openUserModal()" class="btn btn-success">➕ Novo Usuário</button>
+                </div>
+
+                <div class="table-container">
+                    <table id="usersTable">
+                        <thead>
+                            <tr>
+                                <th>Nome</th>
+                                <th>Usuário</th>
+                                <th>Email</th>
+                                <th>Tipo</th>
+                                <th>Status</th>
+                                <th>Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody id="usersTableBody">
+                            <tr>
+                                <td colspan="6" class="loading">Carregando usuários...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        <div id="alerts-sidebar-container"></div>
+        <script>
+            fetch('alerts-sidebar.html')
+                .then(res => res.text())
+                .then(html => {
+                    document.getElementById('alerts-sidebar-container').innerHTML = html;
+                });
+        </script>
+    </div>
+
+    <!-- Modal para Usuário -->
+    <div id="userModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="modalTitle">Novo Usuário</h3>
+                <button class="close-btn" onclick="closeUserModal()">&times;</button>
+            </div>
+
+            <form id="userForm">
+                <input type="hidden" id="userId" name="id">
+
+                <div class="form-group">
+                    <label for="userName">Nome Completo *</label>
+                    <input type="text" id="userName" name="name" class="form-control" required>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="userUsername">Nome de Usuário *</label>
+                        <input type="text" id="userUsername" name="username" class="form-control" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="userEmail">Email</label>
+                        <input type="email" id="userEmail" name="email" class="form-control">
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="userPassword">Senha *</label>
+                        <input type="password" id="userPassword" name="password" class="form-control" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="userRole">Tipo de Usuário *</label>
+                        <select id="userRole" name="role" class="form-control" required>
+                            <option value="user">Usuário Comum</option>
+                            <option value="admin">Administrador</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-group" id="statusGroup" style="display: none;">
+                    <label for="userStatus">Status</label>
+                    <select id="userStatus" name="status" class="form-control">
+                        <option value="active">Ativo</option>
+                        <option value="inactive">Inativo</option>
+                    </select>
+                </div>
+
+                <div style="display: flex; gap: 1rem; justify-content: flex-end; margin-top: 2rem;">
+                    <button type="button" onclick="closeUserModal()" class="btn btn-secondary">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">Salvar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div id="footer-container"></div>
+    <script>
+        fetch('footer.html')
+            .then(res => res.text())
+            .then(html => {
+                document.getElementById('footer-container').innerHTML = html;
+            });
+    </script>
+
+    <script>
+        let users = [];
+        let editingUserId = null;
+        let currentUser = null;
+
+        // Inicializar página
+        document.addEventListener('DOMContentLoaded', function () {
+            checkUserPermissions();
+            loadUsers();
+            setupForm();
+        });
+
+        async function checkUserPermissions() {
+            try {
+                const response = await fetch('/api/user-info');
+                const userData = await response.json();
+                currentUser = userData;
+
+                // Configurações aparece para todos
+                // document.getElementById('settingsNav').style.display = 'inline-block'; // Removido
+
+                if (userData.role === 'admin') {
+                    document.getElementById('usersNav').style.display = 'inline-block';
+                } else {
+                    // Usuário comum não pode acessar esta página
+                    showAlert('Acesso negado. Apenas administradores podem gerenciar usuários.', 'error');
+                    setTimeout(() => {
+                        window.location.href = '/dashboard.html';
+                    }, 2000);
+                }
+            } catch (error) {
+                console.error('Erro ao verificar permissões:', error);
+                window.location.href = '/login.html';
+            }
+        }
+
+        function setupForm() {
+            document.getElementById('userForm').addEventListener('submit', handleFormSubmit);
+        }
+
+        async function loadUsers() {
+            try {
+                const response = await fetch('/api/users');
+                if (response.status === 403) {
+                    showAlert('Acesso negado', 'error');
+                    return;
+                }
+                users = await response.json();
+                renderUsersTable();
+            } catch (error) {
+                console.error('Erro ao carregar usuários:', error);
+                showAlert('Erro ao carregar usuários', 'error');
+            }
+        }
+
+        function renderUsersTable() {
+            const tbody = document.getElementById('usersTableBody');
+
+            if (users.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="6" class="text-center">Nenhum usuário cadastrado</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = users.map(user => `
+                <tr>
+                    <td>${user.name || '-'}</td>
+                    <td>${user.username}</td>
+                    <td>${user.email || '-'}</td>
+                    <td>
+                        <span class="badge ${user.role === 'admin' ? 'badge-admin' : 'badge-user'}">
+                            ${user.role === 'admin' ? 'Administrador' : 'Usuário'}
+                        </span>
+                    </td>
+                    <td>
+                        <span class="badge ${user.status === 'active' ? 'badge-active' : 'badge-inactive'}">
+                            ${user.status === 'active' ? 'Ativo' : 'Inativo'}
+                        </span>
+                    </td>
+                    <td>
+                        <div class="actions">
+                            <button onclick="editUser(${user.id})" class="action-btn edit-btn" title="Editar">
+                                ✏️
+                            </button>
+                            ${user.id !== currentUser.id ? `
+                                <button onclick="deleteUser(${user.id})" class="action-btn delete-btn" title="Desativar">
+                                    🗑️
+                                </button>
+                            ` : ''}
+                        </div>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        function openUserModal(user = null) {
+            const modal = document.getElementById('userModal');
+            const form = document.getElementById('userForm');
+            const title = document.getElementById('modalTitle');
+            const statusGroup = document.getElementById('statusGroup');
+            const passwordField = document.getElementById('userPassword');
+
+            editingUserId = user ? user.id : null;
+
+            if (user) {
+                title.textContent = 'Editar Usuário';
+                statusGroup.style.display = 'block';
+                passwordField.required = false;
+                passwordField.placeholder = 'Deixe em branco para manter a senha atual';
+
+                document.getElementById('userId').value = user.id;
+                document.getElementById('userName').value = user.name || '';
+                document.getElementById('userUsername').value = user.username;
+                document.getElementById('userUsername').disabled = true;
+                document.getElementById('userEmail').value = user.email || '';
+                document.getElementById('userPassword').value = '';
+                document.getElementById('userRole').value = user.role;
+                document.getElementById('userStatus').value = user.status;
+            } else {
+                title.textContent = 'Novo Usuário';
+                statusGroup.style.display = 'none';
+                passwordField.required = true;
+                passwordField.placeholder = '';
+                form.reset();
+                document.getElementById('userUsername').disabled = false;
+                document.getElementById('userId').value = '';
+            }
+
+            modal.classList.add('show');
+        }
+
+        function closeUserModal() {
+            const modal = document.getElementById('userModal');
+            modal.classList.remove('show');
+            editingUserId = null;
+        }
+
+        async function handleFormSubmit(e) {
+            e.preventDefault();
+
+            const formData = new FormData(e.target);
+            const userData = {
+                name: formData.get('name'),
+                username: formData.get('username'),
+                email: formData.get('email'),
+                role: formData.get('role')
+            };
+
+            if (editingUserId) {
+                userData.status = formData.get('status');
+                if (formData.get('password')) {
+                    userData.password = formData.get('password');
+                }
+            } else {
+                userData.password = formData.get('password');
+            }
+
+            try {
+                let response;
+                if (editingUserId) {
+                    response = await fetch(`/api/users/${editingUserId}`, {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(userData)
+                    });
+                } else {
+                    response = await fetch('/api/users', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(userData)
+                    });
+                }
+
+                const result = await response.json();
+
+                if (result.success) {
+                    showAlert(editingUserId ? 'Usuário atualizado com sucesso!' : 'Usuário criado com sucesso!', 'success');
+                    closeUserModal();
+                    loadUsers();
+                } else {
+                    showAlert(result.error || 'Erro ao salvar usuário', 'error');
+                }
+            } catch (error) {
+                console.error('Erro ao salvar usuário:', error);
+                showAlert('Erro ao salvar usuário', 'error');
+            }
+        }
+
+        function editUser(id) {
+            const user = users.find(u => u.id === id);
+            if (user) {
+                openUserModal(user);
+            }
+        }
+
+        async function deleteUser(id) {
+            const user = users.find(u => u.id === id);
+            if (!user) return;
+
+            if (!confirm(`Tem certeza que deseja desativar o usuário "${user.name || user.username}"?`)) {
+                return;
+            }
+
+            try {
+                const response = await fetch(`/api/users/${id}`, {
+                    method: 'DELETE'
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    showAlert('Usuário desativado com sucesso!', 'success');
+                    loadUsers();
+                } else {
+                    showAlert('Erro ao desativar usuário', 'error');
+                }
+            } catch (error) {
+                console.error('Erro ao desativar usuário:', error);
+                showAlert('Erro ao desativar usuário', 'error');
+            }
+        }
+
+        function formatDate(dateString) {
+            if (!dateString) return '';
+            const date = new Date(dateString);
+            return date.toLocaleDateString('pt-BR') + ' ' + date.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+        }
+
+        async function logout() {
+            try {
+                await fetch('/api/logout', { method: 'POST' });
+                window.location.href = '/login.html';
+            } catch (error) {
+                console.error('Erro ao fazer logout:', error);
+            }
+        }
+
+        function showAlert(message, type = 'info') {
+            const alertContainer = document.getElementById('alert-container');
+            const alertDiv = document.createElement('div');
+            alertDiv.className = `alert alert-${type}`;
+            alertDiv.textContent = message;
+
+            alertContainer.appendChild(alertDiv);
+
+            setTimeout(() => {
+                alertDiv.remove();
+            }, 5000);
+        }
+
+        async function loadAlerts() {
+            const ul = document.getElementById('recentAlerts');
+            if (!ul) return;
+            ul.innerHTML = '<li>Carregando alertas...</li>';
+            try {
+                const res = await fetch('/api/alerts');
+                const alerts = await res.json();
+                if (!alerts.length) {
+                    ul.innerHTML = '<li>Nenhum alerta recente</li>';
+                    return;
+                }
+                ul.innerHTML = alerts.map(a => `<li>${a.message}</li>`).join('');
+            } catch {
+                ul.innerHTML = '<li>Erro ao carregar alertas</li>';
+            }
+        }
+        loadAlerts();
+        setInterval(loadAlerts, 15000);
+    </script>
+</body>
+
+</html>

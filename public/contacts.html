@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cadastro - Sistema de Folha de Pagamento</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <script src="js/main.js"></script>
+    <script src="js/utils.js"></script>
+</head>
+<body>
+    <div class="layout">
+        <!-- Sidebar -->
+        <div id="sidebar-container"></div>
+        <script>
+            fetch('sidebar.html')
+                .then(res => res.text())
+                .then(html => {
+                    document.getElementById('sidebar-container').innerHTML = html;
+                    fetch('/api/user-info')
+                        .then(res => res.json())
+                        .then(user => {
+                            if (user.role === 'admin') {
+                                document.getElementById('settingsNav').style.display = 'inline-block';
+                                document.getElementById('usersNav').style.display = 'inline-block';
+                            }
+                        });
+                });
+        </script>
+        
+        <!-- Main Content -->
+        <div class="container main-content">
+            <div class="header">
+                <div class="header-left">
+                    <h1><i class="fas fa-address-book"></i> Cadastro de Contatos</h1>
+                </div>
+                <div class="nav-buttons">
+                    <button class="nav-btn" onclick="openAddContactModal()">
+                        <i class="fas fa-plus"></i> Novo Cadastro
+                    </button>
+                </div>
+            </div>
+
+            <!-- Tabs for different contact types -->
+            <div class="card">
+                <div class="tabs">
+                    <button class="tab-btn active" onclick="switchTab('suppliers')">
+                        <i class="fas fa-truck"></i> Fornecedores
+                    </button>
+                    <button class="tab-btn" onclick="switchTab('clients')">
+                        <i class="fas fa-users"></i> Clientes
+                    </button>
+                </div>
+            </div>
+
+            <!-- Search and Filters -->
+            <div class="card">
+                <div class="search-filters">
+                    <div class="search-box">
+                        <input type="text" id="searchInput" placeholder="Buscar contatos..." class="form-input">
+                        <i class="fas fa-search search-icon"></i>
+                    </div>
+                    <div class="filter-options">
+                        <select id="statusFilter" class="form-select">
+                            <option value="">Todos os status</option>
+                            <option value="ativo">Ativo</option>
+                            <option value="inativo">Inativo</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Contacts Table -->
+            <div class="card">
+                <div class="table-container">
+                    <table class="data-table" id="contactsTable">
+                        <thead>
+                            <tr>
+                                <th>Nome/Razão Social</th>
+                                <th>CNPJ/CPF</th>
+                                <th>Telefone</th>
+                                <th>Email</th>
+                                <th>Endereço</th>
+                                <th>Status</th>
+                                <th>Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody id="contactsTableBody">
+                            <!-- Contacts will be loaded here -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Alerts Sidebar -->
+        <div id="alerts-sidebar-container"></div>
+        <script>
+            fetch('alerts-sidebar.html')
+                .then(res => res.text())
+                .then(html => {
+                    document.getElementById('alerts-sidebar-container').innerHTML = html;
+                });
+        </script>
+    </div>
+
+    <!-- Footer -->
+    <div id="footer-container"></div>
+    <script>
+        fetch('footer.html')
+            .then(res => res.text())
+            .then(html => {
+                document.getElementById('footer-container').innerHTML = html;
+            });
+    </script>
+
+    <!-- Add/Edit Contact Modal -->
+    <div id="contactModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="modalTitle">Novo Cadastro</h2>
+                <span class="close" onclick="closeContactModal()">&times;</span>
+            </div>
+            <form id="contactForm" class="modal-form">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="contactType">Tipo de Contato *</label>
+                        <select id="contactType" name="type" required class="form-select">
+                            <option value="">Selecione...</option>
+                            <option value="supplier">Fornecedor</option>
+                            <option value="client">Cliente</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="contactStatus">Status *</label>
+                        <select id="contactStatus" name="status" required class="form-select">
+                            <option value="">Selecione...</option>
+                            <option value="ativo">Ativo</option>
+                            <option value="inativo">Inativo</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="contactName">Nome/Razão Social *</label>
+                        <input type="text" id="contactName" name="name" required class="form-input">
+                    </div>
+                    <div class="form-group">
+                        <label for="contactDocument">CNPJ/CPF *</label>
+                        <input type="text" id="contactDocument" name="document" required class="form-input">
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="contactPhone">Telefone *</label>
+                        <input type="tel" id="contactPhone" name="phone" required class="form-input">
+                    </div>
+                    <div class="form-group">
+                        <label for="contactEmail">Email</label>
+                        <input type="email" id="contactEmail" name="email" class="form-input">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="contactAddress">Endereço</label>
+                    <textarea id="contactAddress" name="address" class="form-input" rows="3"></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="contactNotes">Observações</label>
+                    <textarea id="contactNotes" name="notes" class="form-input" rows="3"></textarea>
+                </div>
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-primary">Salvar</button>
+                    <button type="button" class="btn btn-secondary" onclick="closeContactModal()">Cancelar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Delete Confirmation Modal -->
+    <div id="deleteModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Confirmar Exclusão</h2>
+                <span class="close" onclick="closeDeleteModal()">&times;</span>
+            </div>
+            <div class="modal-body">
+                <p>Tem certeza que deseja excluir este contato?</p>
+                <p><strong id="deleteContactName"></strong></p>
+            </div>
+            <div class="form-actions">
+                <button class="btn btn-danger" onclick="confirmDeleteContact()">Excluir</button>
+                <button class="btn btn-secondary" onclick="closeDeleteModal()">Cancelar</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/contacts.js"></script>
+</body>
+</html>
