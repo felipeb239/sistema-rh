@@ -71,6 +71,7 @@
             <div class="export-buttons">
                 <button onclick="openPayrollModal()" class="btn btn-success">➕ Novo Holerite</button>
                 <button onclick="exportToCsv()" class="btn btn-secondary">📊 Exportar CSV</button>
+                <button onclick="deleteSelectedPayrolls()" class="btn btn-danger" id="deleteSelectedPayrollsBtn" style="display: none;">🗑️ Excluir Selecionados</button>
             </div>
         </div>
 
@@ -80,6 +81,7 @@
                 <table id="payrollsTable">
                     <thead>
                         <tr>
+                            <th><input type="checkbox" id="selectAllPayrolls"></th>
                             <th>Funcionário</th>
                             <th>CPF</th>
                             <th>Período</th>
@@ -261,6 +263,23 @@
             <div style="display: flex; gap: 1rem; justify-content: flex-end; margin-top: 2rem;">
                 <button type="button" class="btn btn-secondary" onclick="closeDeletePayrollModal()">Cancelar</button>
                 <button type="button" class="btn btn-danger" id="confirmDeletePayrollBtn">Excluir</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal de Confirmação de Exclusão em Lote de Holerites -->
+    <div id="deleteBulkPayrollsModal" class="modal" style="display:none; align-items: flex-start; justify-content: center; padding-top: 5vh;">
+        <div class="modal-content" style="max-width: 500px; margin: auto;">
+            <div class="modal-header">
+                <h3>Confirmar Exclusão em Lote</h3>
+                <button class="close-btn" onclick="closeDeleteBulkPayrollsModal()">&times;</button>
+            </div>
+            <div id="deleteBulkPayrollsContent" style="padding:1rem;">
+                Tem certeza que deseja excluir os holerites selecionados?
+            </div>
+            <div style="display: flex; gap: 1rem; justify-content: flex-end; margin-top: 2rem;">
+                <button type="button" class="btn btn-secondary" onclick="closeDeleteBulkPayrollsModal()">Cancelar</button>
+                <button type="button" class="btn btn-danger" id="confirmDeleteBulkPayrollsBtn">Excluir Selecionados</button>
             </div>
         </div>
     </div>

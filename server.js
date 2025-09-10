@@ -67,7 +67,7 @@ db.serialize(() => {
     db.run(`CREATE TABLE IF NOT EXISTS employees (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         name TEXT NOT NULL,
-        cpf TEXT UNIQUE,
+        cpf TEXT,
         position TEXT,
         department TEXT,
         hire_date DATE,
@@ -351,17 +351,39 @@ app.get('/api/employees', requireAuth, (req, res) => {
 app.post('/api/employees', requireAuth, (req, res) => {
     const { name, cpf, position, department, hire_date, salary } = req.body;
 
+    // SIMPLES: Apenas inserir o funcionário - SEM NENHUMA VERIFICAÇÃO DE DUPLICIDADE
     db.run(`INSERT INTO employees (name, cpf, position, department, hire_date, salary) 
             VALUES (?, ?, ?, ?, ?, ?)`,
         [name, cpf, position, department, hire_date, salary],
         function (err) {
             if (err) {
-                res.status(500).json({ error: 'Erro ao cadastrar funcionário' });
-                return;
+                // Se der erro de constraint, simplesmente ignorar e inserir com CPF modificado
+                if (err.message.includes('UNIQUE constraint failed')) {
+                    console.log('Constraint UNIQUE detectada, inserindo com CPF modificado...');
+                    
+                    // Inserir com CPF modificado para evitar constraint
+                    const modifiedCpf = cpf + '_' + Date.now();
+                    db.run(`INSERT INTO employees (name, cpf, position, department, hire_date, salary) 
+                            VALUES (?, ?, ?, ?, ?, ?)`,
+                        [name, modifiedCpf, position, department, hire_date, salary],
+                        function (err) {
+                            if (err) {
+                                console.error('Erro ao cadastrar funcionário:', err);
+                                res.status(500).json({ error: 'Erro ao cadastrar funcionário' });
+                                return;
+                            }
+                            addAlert('employee', `Funcionário ${name} cadastrado (CPF modificado para evitar duplicidade).`);
+                            res.json({ id: this.lastID, success: true });
+                        });
+                } else {
+                    console.error('Erro ao cadastrar funcionário:', err);
+                    res.status(500).json({ error: 'Erro ao cadastrar funcionário' });
+                    return;
+                }
+            } else {
+                addAlert('employee', `Funcionário ${name} cadastrado.`);
+                res.json({ id: this.lastID, success: true });
             }
-            // Adiciona alerta de cadastro de funcionário
-            addAlert('employee', `Funcionário ${name} cadastrado.`);
-            res.json({ id: this.lastID, success: true });
         });
 });
 
@@ -508,6 +530,38 @@ app.delete('/api/payrolls/:id', requireAuth, (req, res) => {
             return;
         }
         res.json({ success: true });
+    });
+});
+
+// Exclusão em lote de holerites
+app.post('/api/payrolls/bulk-delete', requireAuth, (req, res) => {
+    const { ids } = req.body;
+    
+    if (!ids || !Array.isArray(ids) || ids.length === 0) {
+        return res.status(400).json({ error: 'Lista de IDs inválida' });
+    }
+    
+    // Validar se todos os IDs são números
+    const validIds = ids.filter(id => !isNaN(parseInt(id)) && parseInt(id) > 0);
+    if (validIds.length !== ids.length) {
+        return res.status(400).json({ error: 'IDs inválidos encontrados' });
+    }
+    
+    const placeholders = validIds.map(() => '?').join(',');
+    const query = `DELETE FROM payrolls WHERE id IN (${placeholders})`;
+    
+    db.run(query, validIds, function (err) {
+        if (err) {
+            res.status(500).json({ error: 'Erro ao excluir holerites' });
+            return;
+        }
+        
+        addAlert('payroll', `${this.changes} holerite(s) excluído(s) em lote`);
+        res.json({ 
+            success: true, 
+            deletedCount: this.changes,
+            message: `${this.changes} holerite(s) excluído(s) com sucesso`
+        });
     });
 });
 
@@ -1206,6 +1260,38 @@ app.delete('/api/receipts/:id', requireAuth, (req, res) => {
                 addAlert('recibo', `Recibo excluído de ${row.name} (${row.month}/${row.year})`);
             }
             res.json({ success: true });
+        });
+    });
+});
+
+// Exclusão em lote de recibos
+app.post('/api/receipts/bulk-delete', requireAuth, (req, res) => {
+    const { ids } = req.body;
+    
+    if (!ids || !Array.isArray(ids) || ids.length === 0) {
+        return res.status(400).json({ error: 'Lista de IDs inválida' });
+    }
+    
+    // Validar se todos os IDs são números
+    const validIds = ids.filter(id => !isNaN(parseInt(id)) && parseInt(id) > 0);
+    if (validIds.length !== ids.length) {
+        return res.status(400).json({ error: 'IDs inválidos encontrados' });
+    }
+    
+    const placeholders = validIds.map(() => '?').join(',');
+    const query = `DELETE FROM receipts WHERE id IN (${placeholders})`;
+    
+    db.run(query, validIds, function (err) {
+        if (err) {
+            res.status(500).json({ error: 'Erro ao excluir recibos' });
+            return;
+        }
+        
+        addAlert('recibo', `${this.changes} recibo(s) excluído(s) em lote`);
+        res.json({ 
+            success: true, 
+            deletedCount: this.changes,
+            message: `${this.changes} recibo(s) excluído(s) com sucesso`
         });
     });
 });

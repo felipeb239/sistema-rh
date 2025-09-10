@@ -164,6 +164,11 @@ function renderPagination(totalPages) {
 // Modificar renderReceiptsTable para aplicar filtros de funcionário e tipo
 function renderReceiptsTable() {
     const tbody = document.getElementById('receiptsTableBody');
+    if (!tbody) {
+        console.error('receiptsTableBody não encontrado');
+        return;
+    }
+    console.log('Renderizando recibos, total:', allReceipts.length);
     let filteredReceipts = allReceipts;
     if (receiptFilters.employee) {
         filteredReceipts = filteredReceipts.filter(r => String(r.employee_id) === String(receiptFilters.employee));
@@ -181,30 +186,54 @@ function renderReceiptsTable() {
     const start = (currentPage - 1) * receiptsPerPage;
     const end = start + receiptsPerPage;
     const pageReceipts = filteredReceipts.slice(start, end);
+    console.log('Página atual:', currentPage, 'Recibos na página:', pageReceipts.length);
+    // Renderizar como cards para compatibilidade com layout existente
     tbody.innerHTML = pageReceipts.map(r => `
         <tr>
-            <td><input type="checkbox" class="receipt-checkbox" value="${r.id}" ${selectedReceipts.has(r.id) ? 'checked' : ''}></td>
-            <td>${r.employee_name || '-'}</td>
-            <td>${(r.type === 'vale_transporte' ? 'Vale Transporte' : (r.type === 'vale_alimentacao' ? 'Vale Alimentação' : 'Vale Combustível'))}</td>
-            <td>${('0'+r.month).slice(-2)}/${r.year}</td>
-            <td>R$ ${parseFloat(r.value).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
-            <td>
-                <button class="action-btn edit-btn" title="Editar" onclick="editReceipt(${r.id})">✏️</button>
-                <button class="action-btn delete-btn" title="Excluir" onclick="openDeleteReceiptModal(${r.id})">🗑️</button>
-                <button class="action-btn export-btn" title="Exportar PDF" onclick="exportSingleReceiptToPdf(${r.id})">📄</button>
+            <td colspan="6" style="padding: 0;">
+                <div class="receipt-card" style="display: flex; align-items: center; padding: 1rem; border-bottom: 1px solid #e2e8f0; background: white;">
+                    <div style="margin-right: 1rem;">
+                        <input type="checkbox" class="receipt-checkbox" value="${r.id}" ${selectedReceipts.has(r.id) ? 'checked' : ''} style="width: 20px; height: 20px;">
+                    </div>
+                    <div style="flex: 1; display: flex; align-items: center; gap: 2rem;">
+                        <div style="width: 40px; height: 40px; border-radius: 50%; background: #667eea; color: white; display: flex; align-items: center; justify-content: center; font-weight: bold;">
+                            ${(r.employee_name || 'F')[0].toUpperCase()}
+                        </div>
+                        <div style="flex: 1;">
+                            <div style="font-weight: bold; font-size: 1.1rem;">${r.employee_name || '-'}</div>
+                            <div style="color: #666; font-size: 0.9rem;">
+                                ${(r.type === 'vale_transporte' ? 'Vale Transporte' : (r.type === 'vale_alimentacao' ? 'Vale Alimentação' : 'Vale Combustível'))} • ${('0'+r.month).slice(-2)}/${r.year}
+                            </div>
+                            <div style="color: #888; font-size: 0.8rem;">22 dias • R$ ${(parseFloat(r.value)/22).toFixed(2)}/dia</div>
+                        </div>
+                        <div style="text-align: right;">
+                            <div style="font-weight: bold; font-size: 1.2rem; color: #2d3748;">R$ ${parseFloat(r.value).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</div>
+                            <div style="color: #666; font-size: 0.8rem;">Valor total</div>
+                        </div>
+                        <div style="display: flex; gap: 0.5rem; margin-left: 1rem;">
+                            <button onclick="editReceipt(${r.id})" class="action-btn edit-btn" title="Editar" style="background: #e6fffa; color: #008080; border: none; padding: 0.5rem; border-radius: 4px; cursor: pointer;">📋</button>
+                            <button onclick="exportSingleReceiptToPdf(${r.id})" class="action-btn export-btn" title="Exportar PDF" style="background: #e6fffa; color: #008080; border: none; padding: 0.5rem; border-radius: 4px; cursor: pointer;">⬇️</button>
+                            <button onclick="editReceipt(${r.id})" class="action-btn edit-btn" title="Editar" style="background: #e6fffa; color: #008080; border: none; padding: 0.5rem; border-radius: 4px; cursor: pointer;">✏️</button>
+                            <button onclick="openDeleteReceiptModal(${r.id})" class="action-btn delete-btn" title="Excluir" style="background: #fed7d7; color: #e53e3e; border: none; padding: 0.5rem; border-radius: 4px; cursor: pointer;">🗑️</button>
+                        </div>
+                    </div>
+                </div>
             </td>
         </tr>
     `).join('');
+    console.log('HTML gerado, checkboxes encontrados:', document.querySelectorAll('.receipt-checkbox').length);
     // Checkbox listeners
     document.querySelectorAll('.receipt-checkbox').forEach(cb => {
         cb.addEventListener('change', function() {
             const id = parseInt(this.value);
             if (this.checked) selectedReceipts.add(id);
             else selectedReceipts.delete(id);
+            updateBulkDeleteButton();
         });
     });
     // Select all
     const selectAll = document.getElementById('selectAllReceipts');
+    console.log('Select all encontrado:', !!selectAll);
     if (selectAll) {
         selectAll.checked = pageReceipts.every(r => selectedReceipts.has(r.id));
         selectAll.addEventListener('change', function() {
@@ -213,12 +242,19 @@ function renderReceiptsTable() {
             renderReceiptsTable();
         });
     }
+    updateBulkDeleteButton();
     renderPagination(totalPages);
+    console.log('Renderização concluída');
 }
 
 // Modificar loadReceipts para usar allReceipts e paginação
 async function loadReceipts() {
     const tbody = document.getElementById('receiptsTableBody');
+    if (!tbody) {
+        console.error('receiptsTableBody não encontrado em loadReceipts');
+        return;
+    }
+    console.log('Carregando recibos...');
     tbody.innerHTML = '<tr><td colspan="6" class="loading">Carregando recibos...</td></tr>';
     try {
         let url = '/api/receipts';
@@ -230,6 +266,7 @@ async function loadReceipts() {
         if (params.length) url += '?' + params.join('&');
         const response = await fetch(url);
         const receipts = await response.json();
+        console.log('Recibos carregados:', receipts.length);
         // Ordenar apenas por data de criação (mais novo primeiro)
         receipts.sort((a, b) => {
             if (b.created_at && a.created_at) {
@@ -241,6 +278,7 @@ async function loadReceipts() {
         currentPage = 1;
         renderReceiptsTable();
     } catch (e) {
+        console.error('Erro ao carregar recibos:', e);
         tbody.innerHTML = '<tr><td colspan="6" class="text-center">Erro ao carregar recibos</td></tr>';
         allReceipts = [];
         renderPagination(1);
@@ -260,6 +298,66 @@ function setupReceiptFilters() {
         currentPage = 1;
         renderReceiptsTable();
     });
+}
+
+// Função para atualizar visibilidade do botão de exclusão em lote
+function updateBulkDeleteButton() {
+    const deleteBtn = document.getElementById('deleteSelectedReceiptsBtn');
+    console.log('updateBulkDeleteButton - Botão encontrado:', !!deleteBtn, 'Selecionados:', selectedReceipts.size);
+    if (deleteBtn) {
+        // Mostrar o botão se há itens selecionados
+        deleteBtn.style.display = selectedReceipts.size > 0 ? 'inline-block' : 'none';
+        console.log('Botão visível:', deleteBtn.style.display);
+    }
+}
+
+// Função para abrir modal de confirmação de exclusão em lote
+function deleteSelectedReceipts() {
+    if (selectedReceipts.size === 0) {
+        showAlert('Selecione pelo menos um recibo para excluir', 'error');
+        return;
+    }
+    
+    const modal = document.getElementById('deleteBulkReceiptsModal');
+    const content = document.getElementById('deleteBulkReceiptsContent');
+    content.innerHTML = `Tem certeza que deseja excluir <strong>${selectedReceipts.size}</strong> recibo(s) selecionado(s)?<br><br>Esta ação não pode ser desfeita.`;
+    modal.style.display = 'flex';
+    
+    const confirmBtn = document.getElementById('confirmDeleteBulkReceiptsBtn');
+    confirmBtn.onclick = confirmDeleteBulkReceipts;
+}
+
+// Função para fechar modal de exclusão em lote
+function closeDeleteBulkReceiptsModal() {
+    const modal = document.getElementById('deleteBulkReceiptsModal');
+    modal.style.display = 'none';
+}
+
+// Função para confirmar exclusão em lote
+async function confirmDeleteBulkReceipts() {
+    if (selectedReceipts.size === 0) return;
+    
+    try {
+        const response = await fetch('/api/receipts/bulk-delete', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ ids: Array.from(selectedReceipts) })
+        });
+        
+        const result = await response.json();
+        if (result.success) {
+            showAlert(`${result.deletedCount} recibo(s) excluído(s) com sucesso!`, 'success');
+            selectedReceipts.clear();
+            loadReceipts();
+        } else {
+            showAlert(result.error || 'Erro ao excluir recibos', 'error');
+        }
+    } catch (error) {
+        console.error('Erro ao excluir recibos:', error);
+        showAlert('Erro ao excluir recibos', 'error');
+    }
+    
+    closeDeleteBulkReceiptsModal();
 }
 
 // Exportar apenas selecionados
@@ -437,6 +535,8 @@ async function loadAlerts() {
 // Inicialização
 window.exportReceiptsToCsv = exportReceiptsToCsv;
 window.exportReceiptsToPdf = exportReceiptsToPdf;
+window.deleteSelectedReceipts = deleteSelectedReceipts;
+window.closeDeleteBulkReceiptsModal = closeDeleteBulkReceiptsModal;
 window.logout = function() {
     fetch('/api/logout', { method: 'POST' })
         .then(() => window.location.href = '/login.html');

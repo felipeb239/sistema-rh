@@ -4,14 +4,18 @@
 // import { formatCpf } from './utils.js';
 // import { monthNames } from './constants.js';
 
+// Variável global para armazenar holerites selecionados
+let selectedPayrolls = new Set();
+
 function renderPayrollsTable(payrolls) {
     const tbody = document.getElementById('payrollsTableBody');
     if (payrolls.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="7" class="text-center">Nenhum holerite encontrado</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="8" class="text-center">Nenhum holerite encontrado</td></tr>';
         return;
     }
     tbody.innerHTML = payrolls.map(payroll => `
         <tr>
+            <td><input type="checkbox" class="payroll-checkbox" value="${payroll.id}" ${selectedPayrolls.has(payroll.id) ? 'checked' : ''}></td>
             <td>${payroll.employee_name}</td>
             <td>${window.formatCpf(payroll.cpf)}</td>
             <td>${window.monthNames[payroll.month - 1]}/${payroll.year}</td>
@@ -28,6 +32,35 @@ function renderPayrollsTable(payrolls) {
             </td>
         </tr>
     `).join('');
+    
+    // Adicionar event listeners para checkboxes
+    document.querySelectorAll('.payroll-checkbox').forEach(checkbox => {
+        checkbox.addEventListener('change', function() {
+            const id = parseInt(this.value);
+            if (this.checked) {
+                selectedPayrolls.add(id);
+            } else {
+                selectedPayrolls.delete(id);
+            }
+            updateBulkDeleteButton();
+        });
+    });
+    
+    // Configurar checkbox "Selecionar Todos"
+    const selectAllCheckbox = document.getElementById('selectAllPayrolls');
+    if (selectAllCheckbox) {
+        selectAllCheckbox.checked = payrolls.length > 0 && payrolls.every(p => selectedPayrolls.has(p.id));
+        selectAllCheckbox.addEventListener('change', function() {
+            if (this.checked) {
+                payrolls.forEach(p => selectedPayrolls.add(p.id));
+            } else {
+                payrolls.forEach(p => selectedPayrolls.delete(p.id));
+            }
+            renderPayrollsTable(payrolls); // Re-renderizar para atualizar checkboxes
+        });
+    }
+    
+    updateBulkDeleteButton();
 }
 
 function viewPayrollDetails(id) {
@@ -204,6 +237,64 @@ function populateEmployeeSelects(employees) {
     });
 }
 
+// Função para atualizar visibilidade do botão de exclusão em lote
+function updateBulkDeleteButton() {
+    const deleteBtn = document.getElementById('deleteSelectedPayrollsBtn');
+    if (deleteBtn) {
+        // Mostrar o botão se há itens selecionados
+        deleteBtn.style.display = selectedPayrolls.size > 0 ? 'inline-block' : 'none';
+    }
+}
+
+// Função para abrir modal de confirmação de exclusão em lote
+function deleteSelectedPayrolls() {
+    if (selectedPayrolls.size === 0) {
+        window.showAlert('Selecione pelo menos um holerite para excluir', 'error');
+        return;
+    }
+    
+    const modal = document.getElementById('deleteBulkPayrollsModal');
+    const content = document.getElementById('deleteBulkPayrollsContent');
+    content.innerHTML = `Tem certeza que deseja excluir <strong>${selectedPayrolls.size}</strong> holerite(s) selecionado(s)?<br><br>Esta ação não pode ser desfeita.`;
+    modal.style.display = 'flex';
+    
+    const confirmBtn = document.getElementById('confirmDeleteBulkPayrollsBtn');
+    confirmBtn.onclick = confirmDeleteBulkPayrolls;
+}
+
+// Função para fechar modal de exclusão em lote
+function closeDeleteBulkPayrollsModal() {
+    const modal = document.getElementById('deleteBulkPayrollsModal');
+    modal.style.display = 'none';
+}
+
+// Função para confirmar exclusão em lote
+async function confirmDeleteBulkPayrolls() {
+    if (selectedPayrolls.size === 0) return;
+    
+    try {
+        const response = await fetch('/api/payrolls/bulk-delete', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ ids: Array.from(selectedPayrolls) })
+        });
+        
+        const result = await response.json();
+        if (result.success) {
+            window.showAlert(`${result.deletedCount} holerite(s) excluído(s) com sucesso!`, 'success');
+            selectedPayrolls.clear();
+            window.loadPayrolls();
+        } else {
+            window.showAlert(result.error || 'Erro ao excluir holerites', 'error');
+        }
+    } catch (error) {
+        console.error('Erro ao excluir holerites:', error);
+        window.showAlert('Erro ao excluir holerites', 'error');
+    }
+    
+    closeDeleteBulkPayrollsModal();
+}
+
 // Make all functions available globally
 window.renderPayrollsTable = renderPayrollsTable;
 window.viewPayrollDetails = viewPayrollDetails;
@@ -215,3 +306,5 @@ window.exportToCsv = exportToCsv;
 window.exportToPdf = exportToPdf;
 window.loadPayrolls = loadPayrolls;
 window.populateEmployeeSelects = populateEmployeeSelects;
+window.deleteSelectedPayrolls = deleteSelectedPayrolls;
+window.closeDeleteBulkPayrollsModal = closeDeleteBulkPayrollsModal;

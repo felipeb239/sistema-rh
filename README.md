@@ -16,6 +16,7 @@ Sistema completo de gestão de folha de pagamento desenvolvido com Next.js 14, T
 - **Busca Inteligente**: Sistema de busca em tempo real
 - **Dados Completos**: Nome, CPF, cargo, departamento, data de admissão, salário
 - **Modal de Confirmação**: Interface elegante para confirmações de exclusão
+- **CPF Flexível**: Permite cadastro de funcionários com mesmo CPF (recontratação)
 
 ### 💰 Holerites (Folha de Pagamento)
 - **Cálculos Automáticos**: INSS, FGTS e IRRF baseados nas tabelas oficiais de 2024
@@ -35,6 +36,8 @@ Sistema completo de gestão de folha de pagamento desenvolvido com Next.js 14, T
 - **Estatísticas Precisas**: Totais sempre baseados no período selecionado
 - **Exportação Individual**: PDF e CSV para cada recibo
 - **Busca Avançada**: Sistema de busca por funcionário e tipo
+- **PDF Otimizado**: Layout compacto em formato de holerite com duas vias em uma página
+- **Layout Profissional**: Via da empresa e via do funcionário lado a lado
 
 ### 📊 Dashboard e Relatórios
 - **Visão Geral**: Estatísticas em tempo real do sistema
@@ -225,6 +228,9 @@ src/
 - **Estatísticas Precisas**: Totais baseados no período filtrado
 - **Exportação Individual**: PDF e CSV para cada recibo
 - **Busca Avançada**: Por funcionário e tipo de recibo
+- **PDF Profissional**: Layout em formato de holerite com duas vias
+- **Layout Compacto**: Via da empresa e via do funcionário em uma única página
+- **Design Otimizado**: Cabeçalhos padronizados e alinhamento perfeito
 
 ### Configurações
 - **Upload de Logo**: Sistema drag & drop com preview
@@ -289,6 +295,8 @@ NODE_ENV="production"
 - ✅ Paginação inteligente de recibos
 - ✅ Filtros por período
 - ✅ Upload de logo da empresa
+- ✅ CPF flexível para recontratação de funcionários
+- ✅ PDF de recibos otimizado em formato de holerite
 
 ### Performance e Estabilidade
 - ✅ APIs otimizadas e funcionais
@@ -296,6 +304,13 @@ NODE_ENV="production"
 - ✅ Cálculos precisos e automáticos
 - ✅ Sistema de cache com TanStack Query
 - ✅ Tratamento de erros robusto
+
+### PDFs e Relatórios
+- ✅ Layout compacto de recibos em uma página
+- ✅ Duas vias (empresa e funcionário) lado a lado
+- ✅ Cabeçalhos padronizados e alinhados
+- ✅ Design profissional em formato de holerite
+- ✅ Labels colados aos valores para melhor legibilidade
 
 ## 🤝 Contribuição
 

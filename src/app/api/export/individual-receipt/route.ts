@@ -67,7 +67,7 @@ export async function GET(request: NextRequest) {
         }
       })
     } else {
-      // PDF Export (HTML format for printing)
+      // PDF Export (HTML format for printing) - Layout compacto
       const htmlContent = `
         <!DOCTYPE html>
         <html lang="pt-BR">
@@ -78,62 +78,114 @@ export async function GET(request: NextRequest) {
             <style>
                 body { 
                     font-family: Arial, sans-serif; 
-                    margin: 20mm; 
-                    font-size: 10pt; 
-                    line-height: 1.4;
+                    margin: 8mm; 
+                    font-size: 9pt; 
+                    line-height: 1.1;
                 }
                 .header { 
                     text-align: center; 
-                    margin-bottom: 20mm; 
-                    border-bottom: 2px solid #333;
-                    padding-bottom: 10mm;
-                }
-                .header img { 
-                    max-width: 150px; 
-                    max-height: 80px; 
-                    object-fit: contain; 
-                    margin-bottom: 10px; 
+                    margin-bottom: 5mm; 
+                    border-bottom: 1px solid #333;
+                    padding-bottom: 3mm;
                 }
                 .header h1 { 
                     margin: 0; 
-                    font-size: 16pt; 
+                    font-size: 11pt; 
                     font-weight: bold;
                 }
                 .header p { 
-                    margin: 2px 0; 
-                    font-size: 9pt; 
+                    margin: 1px 0; 
+                    font-size: 8pt; 
+                }
+                .column .header {
+                    text-align: center;
+                    margin-bottom: 5mm;
+                    padding-bottom: 3mm;
+                    border-bottom: 1px solid #333;
+                }
+                .column .header h1 {
+                    font-size: 11pt;
+                    margin: 0;
+                    font-weight: bold;
+                }
+                .column .header p {
+                    margin: 1px 0;
+                    font-size: 8pt;
                 }
                 .receipt-title {
                     text-align: center;
-                    font-size: 18pt;
+                    font-size: 12pt;
                     font-weight: bold;
-                    margin: 20px 0;
+                    margin: 5px 0;
                     text-transform: uppercase;
                 }
-                .employee-info {
-                    background-color: #f8f9fa;
-                    padding: 15px;
-                    margin-bottom: 20px;
-                    border-radius: 5px;
+                .column .receipt-title {
+                    font-size: 12pt;
+                    margin: 5px 0;
                 }
-                .receipt-details {
-                    background-color: #f8f9fa;
-                    padding: 20px;
-                    border-radius: 5px;
-                    margin-bottom: 20px;
+                .two-columns {
+                    display: block;
+                    margin-bottom: 3mm;
                 }
-                .row {
+                .column {
+                    width: 100%;
+                    padding: 4mm;
+                    margin-bottom: 8mm;
+                    page-break-inside: avoid;
+                    border-bottom: 1px dashed #333;
+                }
+                .column:last-child {
+                    margin-bottom: 0;
+                    border-bottom: none;
+                }
+                .column h3 {
+                    margin: 0 0 3mm 0;
+                    font-size: 10pt;
+                    text-align: center;
+                    border-bottom: 1px solid #333;
+                    padding-bottom: 2mm;
+                }
+                .employee-info, .receipt-details {
+                    margin-bottom: 3mm;
+                }
+                .info-row {
                     display: flex;
                     justify-content: space-between;
-                    margin-bottom: 10px;
-                    padding: 5px 0;
+                    margin-bottom: 2mm;
+                    font-size: 8pt;
                 }
-                .row.total {
+                .info-row .label {
                     font-weight: bold;
-                    font-size: 12pt;
+                }
+                .details-table {
+                    width: 100%;
+                    border-collapse: collapse;
+                    font-size: 8pt;
+                    border: 1px solid #333;
+                }
+                .details-table th {
+                    background-color: #f0f0f0;
+                    padding: 2mm;
+                    border: 1px solid #333;
+                    font-weight: bold;
+                    text-align: center;
+                }
+                .details-table td {
+                    padding: 1mm 2mm;
+                    border: 1px solid #333;
+                    text-align: left;
+                }
+                .details-table .value-cell {
+                    text-align: right;
+                    font-weight: bold;
+                }
+                .details-table .total-row {
+                    background-color: #f8f8f8;
+                    font-weight: bold;
+                }
+                .details-table .total-row td {
+                    padding: 2mm;
                     border-top: 2px solid #333;
-                    padding-top: 10px;
-                    margin-top: 15px;
                 }
                 .label {
                     font-weight: 500;
@@ -142,7 +194,7 @@ export async function GET(request: NextRequest) {
                     text-align: right;
                 }
                 .signature-section {
-                    margin-top: 40px;
+                    margin-top: 5mm;
                     display: flex;
                     justify-content: space-between;
                 }
@@ -152,87 +204,155 @@ export async function GET(request: NextRequest) {
                 }
                 .signature-line {
                     border-bottom: 1px solid #333;
-                    margin-bottom: 5px;
-                    height: 40px;
+                    margin-bottom: 1mm;
+                    height: 20px;
+                }
+                .signature-box p {
+                    margin: 0;
+                    font-size: 7pt;
                 }
                 .footer { 
                     text-align: center; 
-                    margin-top: 20mm; 
-                    font-size: 8pt; 
+                    margin-top: 3mm; 
+                    font-size: 7pt; 
                     color: #777; 
                     border-top: 1px solid #ccc;
-                    padding-top: 10px;
+                    padding-top: 2mm;
                 }
                 @media print {
-                    body { margin: 10mm; }
+                    body { margin: 5mm; }
                     .no-print { display: none; }
                 }
             </style>
         </head>
         <body>
-            <div class="header">
-                ${companySettings?.logo ? `<img src="${companySettings.logo}" alt="${companySettings.companyName || 'Logo da Empresa'}">` : ''}
-                <h1>${companySettings?.companyName || 'Nome da Empresa'}</h1>
-                <p>${companySettings?.address || ''} - ${companySettings?.city || ''}, ${companySettings?.state || ''}</p>
-                <p>CNPJ: ${companySettings?.cnpj || ''} | Telefone: ${companySettings?.phone || ''}</p>
-            </div>
+            <div class="two-columns">
+                <!-- VIA DA EMPRESA -->
+                <div class="column">
+                    <div class="header">
+                        <h1>${companySettings?.companyName || 'Nome da Empresa'}</h1>
+                        <p>${companySettings?.address || ''} - ${companySettings?.city || ''}, ${companySettings?.state || ''}</p>
+                        <p>CNPJ: ${companySettings?.cnpj || ''} | Telefone: ${companySettings?.phone || ''}</p>
+                    </div>
 
-            <div class="receipt-title">
-                RECIBO DE ${receipt.type?.name?.toUpperCase() || 'TIPO'}
-            </div>
+                    <div class="receipt-title">
+                        RECIBO DE ${receipt.type?.name?.toUpperCase() || 'TIPO'}
+                    </div>
 
-            <div class="employee-info">
-                <h3>Dados do Funcionário</h3>
-                <div class="row">
-                    <span class="label">Nome:</span>
-                    <span class="value">${receipt.employee?.name || ''}</span>
-                </div>
-                <div class="row">
-                    <span class="label">CPF:</span>
-                    <span class="value">${formatCPF(receipt.employee?.cpf || '')}</span>
-                </div>
-                <div class="row">
-                    <span class="label">Cargo:</span>
-                    <span class="value">${receipt.employee?.position || ''}</span>
-                </div>
-                <div class="row">
-                    <span class="label">Departamento:</span>
-                    <span class="value">${receipt.employee?.department || ''}</span>
-                </div>
-            </div>
+                    <h3>VIA DA EMPRESA</h3>
+                    
+                    <div class="employee-info">
+                        <div class="info-row">
+                            <span class="label">Nome: ${receipt.employee?.name || ''}</span>
+                            <span class="label">CPF: ${formatCPF(receipt.employee?.cpf || '')}</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="label">Cargo: ${receipt.employee?.position || ''}</span>
+                            <span class="label">Departamento: ${receipt.employee?.department || ''}</span>
+                        </div>
+                    </div>
 
-            <div class="receipt-details">
-                <h3>Detalhes do Recibo</h3>
-                <div class="row">
-                    <span class="label">Tipo:</span>
-                    <span class="value">${receipt.type?.name || 'Tipo não encontrado'}</span>
-                </div>
-                <div class="row">
-                    <span class="label">Período:</span>
-                    <span class="value">01 a ${getLastDayOfMonth(receipt.year, receipt.month).toString().padStart(2, '0')} de ${getMonthName(receipt.month)}/${receipt.year}</span>
-                </div>
-                <div class="row">
-                    <span class="label">Valor Diário:</span>
-                    <span class="value">${formatCurrency(Number(receipt.dailyValue) || 0)}</span>
-                </div>
-                <div class="row">
-                    <span class="label">Número de Dias:</span>
-                    <span class="value">${receipt.days}</span>
-                </div>
-                <div class="row total">
-                    <span class="label">VALOR TOTAL:</span>
-                    <span class="value">${formatCurrency(Number(receipt.value) || 0)}</span>
-                </div>
-            </div>
+                    <div class="receipt-details">
+                        <table class="details-table">
+                            <thead>
+                                <tr>
+                                    <th>Código</th>
+                                    <th>Descrição</th>
+                                    <th>Referência</th>
+                                    <th>Valor</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>1</td>
+                                    <td>${receipt.type?.name || 'Tipo não encontrado'}</td>
+                                    <td>${receipt.days} dias x ${formatCurrency(Number(receipt.dailyValue) || 0)}</td>
+                                    <td class="value-cell">${formatCurrency(Number(receipt.value) || 0)}</td>
+                                </tr>
+                            </tbody>
+                            <tfoot>
+                                <tr class="total-row">
+                                    <td colspan="3"><strong>VALOR TOTAL:</strong></td>
+                                    <td class="value-cell"><strong>${formatCurrency(Number(receipt.value) || 0)}</strong></td>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
 
-            <div class="signature-section">
-                <div class="signature-box">
-                    <div class="signature-line"></div>
-                    <p>Assinatura do Funcionário</p>
+                    <div class="signature-section">
+                        <div class="signature-box">
+                            <div class="signature-line"></div>
+                            <p>Assinatura do Funcionário</p>
+                        </div>
+                        <div class="signature-box">
+                            <div class="signature-line"></div>
+                            <p>Assinatura do Responsável</p>
+                        </div>
+                    </div>
                 </div>
-                <div class="signature-box">
-                    <div class="signature-line"></div>
-                    <p>Assinatura do Responsável</p>
+
+                <!-- VIA DO FUNCIONÁRIO -->
+                <div class="column">
+                    <div class="header">
+                        <h1>${companySettings?.companyName || 'Nome da Empresa'}</h1>
+                        <p>${companySettings?.address || ''} - ${companySettings?.city || ''}, ${companySettings?.state || ''}</p>
+                        <p>CNPJ: ${companySettings?.cnpj || ''} | Telefone: ${companySettings?.phone || ''}</p>
+                    </div>
+
+                    <div class="receipt-title">
+                        RECIBO DE ${receipt.type?.name?.toUpperCase() || 'TIPO'}
+                    </div>
+
+                    <h3>VIA DO FUNCIONÁRIO</h3>
+                    
+                    <div class="employee-info">
+                        <div class="info-row">
+                            <span class="label">Nome: ${receipt.employee?.name || ''}</span>
+                            <span class="label">CPF: ${formatCPF(receipt.employee?.cpf || '')}</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="label">Cargo: ${receipt.employee?.position || ''}</span>
+                            <span class="label">Departamento: ${receipt.employee?.department || ''}</span>
+                        </div>
+                    </div>
+
+                    <div class="receipt-details">
+                        <table class="details-table">
+                            <thead>
+                                <tr>
+                                    <th>Código</th>
+                                    <th>Descrição</th>
+                                    <th>Referência</th>
+                                    <th>Valor</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>1</td>
+                                    <td>${receipt.type?.name || 'Tipo não encontrado'}</td>
+                                    <td>${receipt.days} dias x ${formatCurrency(Number(receipt.dailyValue) || 0)}</td>
+                                    <td class="value-cell">${formatCurrency(Number(receipt.value) || 0)}</td>
+                                </tr>
+                            </tbody>
+                            <tfoot>
+                                <tr class="total-row">
+                                    <td colspan="3"><strong>VALOR TOTAL:</strong></td>
+                                    <td class="value-cell"><strong>${formatCurrency(Number(receipt.value) || 0)}</strong></td>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+
+                    <div class="signature-section">
+                        <div class="signature-box">
+                            <div class="signature-line"></div>
+                            <p>Assinatura do Funcionário</p>
+                        </div>
+                        <div class="signature-box">
+                            <div class="signature-line"></div>
+                            <p>Assinatura do Responsável</p>
+                        </div>
+                    </div>
                 </div>
             </div>
 

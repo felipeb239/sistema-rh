@@ -93,6 +93,20 @@ export function ReceiptsContent() {
   const pagination = receiptsData?.pagination || { page: 1, totalPages: 1, totalReceipts: 0 }
   const stats = statsData || { totalReceipts: 0, totalValue: 0, averageValue: 0 }
 
+  // Debug logs
+  console.log('Receipts data:', {
+    receiptsData,
+    receipts: receipts.map(r => ({
+      id: r.id,
+      employeeName: r.employee?.name,
+      typeName: r.type?.name,
+      month: r.month,
+      year: r.year
+    })),
+    pagination,
+    stats
+  })
+
   const { data: employees = [] } = useQuery({
     queryKey: ['employees'],
     queryFn: fetchEmployees,
@@ -110,12 +124,17 @@ export function ReceiptsContent() {
     }
   })
 
-  const filteredReceipts = receipts.filter((receipt: Receipt) =>
-    receipt.employee?.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    receipt.type?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    receipt.month.toString().includes(searchTerm) ||
-    receipt.year.toString().includes(searchTerm)
-  )
+  const filteredReceipts = receipts.filter((receipt: Receipt) => {
+    if (!searchTerm) return true
+    
+    const searchLower = searchTerm.toLowerCase()
+    return (
+      receipt.employee?.name?.toLowerCase().includes(searchLower) ||
+      receipt.type?.name?.toLowerCase().includes(searchLower) ||
+      receipt.month.toString().includes(searchTerm) ||
+      receipt.year.toString().includes(searchTerm)
+    )
+  })
 
   const handleEdit = (receipt: Receipt) => {
     setEditingReceipt(receipt)
@@ -378,7 +397,7 @@ export function ReceiptsContent() {
                         </span>
                       </div>
                       <div>
-                        <h3 className="font-medium">{receipt.employee?.name}</h3>
+                        <h3 className="font-medium">{receipt.employee?.name || 'Funcionário não encontrado'}</h3>
                         <p className="text-sm text-muted-foreground">
                           {getReceiptTypeLabel(receipt)} • {receipt.month}/{receipt.year}
                         </p>

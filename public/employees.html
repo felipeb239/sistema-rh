@@ -332,7 +332,15 @@
                     const result = await response.json();
 
                     if (result.success) {
-                        showAlert(editingEmployeeId ? 'Funcionário atualizado com sucesso!' : 'Funcionário cadastrado com sucesso!', 'success');
+                        if (result.updated) {
+                            showAlert('Funcionário atualizado com sucesso! (CPF já existia)', 'success');
+                        } else if (result.reactivated) {
+                            showAlert('Funcionário reativado com sucesso!', 'success');
+                        } else if (editingEmployeeId) {
+                            showAlert('Funcionário atualizado com sucesso!', 'success');
+                        } else {
+                            showAlert('Funcionário cadastrado com sucesso!', 'success');
+                        }
                         closeEmployeeModal();
                         loadEmployees();
                     } else {

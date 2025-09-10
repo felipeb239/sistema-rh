@@ -33,6 +33,13 @@ export async function GET(request: NextRequest) {
       }
     })
 
+    console.log('Receipt stats query:', {
+      where,
+      totalReceipts: stats._count.id,
+      totalValue: stats._sum.value,
+      averageValue: stats._avg.value
+    })
+
     return NextResponse.json({
       totalReceipts: stats._count.id || 0,
       totalValue: stats._sum.value || 0,

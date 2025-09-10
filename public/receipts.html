@@ -146,12 +146,15 @@
                     <table id="receiptsTable">
                         <thead>
                             <tr>
-                                <th><input type="checkbox" id="selectAllReceipts"></th>
-                                <th>Funcionário</th>
-                                <th>Tipo</th>
-                                <th>Período</th>
-                                <th>Valor</th>
-                                <th>Ações</th>
+                                <th colspan="6" style="padding: 1rem; background: #f7fafc; border-bottom: 2px solid #e2e8f0;">
+                                    <div style="display: flex; align-items: center; gap: 1rem;">
+                                        <label style="display: flex; align-items: center; gap: 0.5rem; font-weight: bold; cursor: pointer;">
+                                            <input type="checkbox" id="selectAllReceipts" style="width: 20px; height: 20px;">
+                                            Selecionar Todos
+                                        </label>
+                                        <span style="color: #666; font-size: 0.9rem;">Lista de Recibos</span>
+                                    </div>
+                                </th>
                             </tr>
                         </thead>
                         <tbody id="receiptsTableBody">
@@ -166,6 +169,7 @@
                 <div class="export-buttons" style="margin-top: 1rem;">
                     <button onclick="exportReceiptsToCsv()" class="btn btn-secondary">📊 Exportar CSV</button>
                     <button onclick="exportReceiptsToPdf()" class="btn btn-secondary">📄 Exportar PDF</button>
+                    <button onclick="deleteSelectedReceipts()" class="btn btn-danger" id="deleteSelectedReceiptsBtn" style="display: none;">🗑️ Excluir Selecionados</button>
                 </div>
             </div>
         </div>
@@ -200,6 +204,23 @@
             <div style="display: flex; gap: 1rem; justify-content: flex-end; margin-top: 2rem;">
                 <button type="button" class="btn btn-secondary" onclick="closeDeleteReceiptModal()">Cancelar</button>
                 <button type="button" class="btn btn-danger" id="confirmDeleteReceiptBtn">Excluir</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal de Confirmação de Exclusão em Lote de Recibos -->
+    <div id="deleteBulkReceiptsModal" class="modal" style="display:none; align-items: flex-start; justify-content: center; padding-top: 5vh;">
+        <div class="modal-content" style="max-width: 500px; margin: auto;">
+            <div class="modal-header">
+                <h3>Confirmar Exclusão em Lote</h3>
+                <button class="close-btn" onclick="closeDeleteBulkReceiptsModal()">&times;</button>
+            </div>
+            <div id="deleteBulkReceiptsContent" style="padding:1rem;">
+                Tem certeza que deseja excluir os recibos selecionados?
+            </div>
+            <div style="display: flex; gap: 1rem; justify-content: flex-end; margin-top: 2rem;">
+                <button type="button" class="btn btn-secondary" onclick="closeDeleteBulkReceiptsModal()">Cancelar</button>
+                <button type="button" class="btn btn-danger" id="confirmDeleteBulkReceiptsBtn">Excluir Selecionados</button>
             </div>
         </div>
     </div>
