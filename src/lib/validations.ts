@@ -18,7 +18,7 @@ export const employeeSchema = z.object({
 export const payrollSchema = z.object({
   employeeId: z.string().min(1, 'Funcionário é obrigatório'),
   month: z.number().min(1).max(12, 'Mês deve ser entre 1 e 12'),
-  year: z.number().min(2020).max(2030, 'Ano inválido'),
+  year: z.number().min(2020).max(new Date().getFullYear() + 10, 'Ano inválido'),
   baseSalary: z.number().min(0, 'Salário base deve ser positivo'),
   overtimeHours: z.number().min(0).optional(),
   overtimeRate: z.number().min(0).optional(),

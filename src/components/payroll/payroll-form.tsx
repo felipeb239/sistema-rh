@@ -11,6 +11,7 @@ import { ArrowLeft, Save } from 'lucide-react'
 import { Payroll, Employee, PayrollRubric } from '@/types'
 import { ApplyRubricsDialog } from './apply-rubrics-dialog'
 import { CopyRubricsDialog } from './copy-rubrics-dialog'
+import { EmployeeRubricsDisplay } from './employee-rubrics-display'
 
 interface PayrollFormProps {
   payroll?: Payroll | null
@@ -65,8 +66,7 @@ export function PayrollForm({ payroll, onClose }: PayrollFormProps) {
     dentalInsurance: '',
     customDiscount: '',
     customDiscountDescription: '',
-    fgtsAmount: '',
-    autoCalculateTaxes: true
+    fgtsAmount: ''
   })
 
   const queryClient = useQueryClient()
@@ -89,54 +89,14 @@ export function PayrollForm({ payroll, onClose }: PayrollFormProps) {
         dentalInsurance: payroll.dentalInsurance?.toString() || '',
         customDiscount: payroll.customDiscount?.toString() || '',
         customDiscountDescription: payroll.customDiscountDescription || '',
-        fgtsAmount: payroll.fgtsAmount?.toString() || '',
-        autoCalculateTaxes: true
+        fgtsAmount: payroll.fgtsAmount?.toString() || ''
       })
     }
   }, [payroll])
 
-  // Calcular FGTS automaticamente quando o salário base mudar
-  useEffect(() => {
-    if (formData.baseSalary) {
-      const baseSalary = parseFloat(formData.baseSalary) || 0
-      const fgtsAmount = baseSalary * 0.08
-      setFormData(prev => ({
-        ...prev,
-        fgtsAmount: fgtsAmount.toFixed(2)
-      }))
-    }
-  }, [formData.baseSalary])
+  // FGTS agora é preenchido manualmente
 
-  // Calcular INSS e IRRF automaticamente quando habilitado
-  useEffect(() => {
-    if (formData.autoCalculateTaxes && formData.baseSalary) {
-      const baseSalary = parseFloat(formData.baseSalary) || 0
-      
-      // Calcular INSS
-      const inssRates = [
-        { min: 0, max: 1518.00, rate: 0.075 },
-        { min: 1518.01, max: 2793.88, rate: 0.09 },
-        { min: 2793.89, max: 4190.83, rate: 0.12 },
-        { min: 4190.84, max: 8157.41, rate: 0.14 }
-      ]
-      
-      let inssDiscount = 0
-      for (const bracket of inssRates) {
-        if (baseSalary > bracket.min) {
-          const taxableAmount = Math.min(baseSalary, bracket.max) - bracket.min
-          if (taxableAmount > 0) {
-            inssDiscount += taxableAmount * bracket.rate
-          }
-        }
-      }
-      inssDiscount = Math.min(inssDiscount, 951.63) // Teto máximo
-      
-      setFormData(prev => ({
-        ...prev,
-        inssDiscount: inssDiscount.toFixed(2)
-      }))
-    }
-  }, [formData.baseSalary, formData.autoCalculateTaxes])
+  // Cálculos automáticos removidos - preenchimento manual
 
   const createMutation = useMutation({
     mutationFn: createPayroll,
@@ -175,8 +135,7 @@ export function PayrollForm({ payroll, onClose }: PayrollFormProps) {
       healthInsurance: parseFloat(formData.healthInsurance) || 0,
       dentalInsurance: parseFloat(formData.dentalInsurance) || 0,
       customDiscount: parseFloat(formData.customDiscount) || 0,
-      fgtsAmount: parseFloat(formData.fgtsAmount) || 0,
-      autoCalculateTaxes: formData.autoCalculateTaxes
+      fgtsAmount: parseFloat(formData.fgtsAmount) || 0
     }
 
     console.log('Processed submit data:', submitData)
@@ -373,7 +332,7 @@ export function PayrollForm({ payroll, onClose }: PayrollFormProps) {
                   value={formData.year}
                   onChange={(e) => handleChange('year', e.target.value)}
                   required
-                  placeholder="2024"
+                  placeholder={new Date().getFullYear().toString()}
                 />
               </div>
             </div>
@@ -411,7 +370,7 @@ export function PayrollForm({ payroll, onClose }: PayrollFormProps) {
                 />
                 {formData.autoCalculateTaxes && (
                   <p className="text-xs text-muted-foreground">
-                    Calculado automaticamente baseado nas tabelas de 2024
+                    Calculado automaticamente baseado nas tabelas de {new Date().getFullYear()}
                   </p>
                 )}
               </div>
@@ -489,33 +448,28 @@ export function PayrollForm({ payroll, onClose }: PayrollFormProps) {
                   type="number"
                   step="0.01"
                   value={formData.fgtsAmount || ''}
-                  readOnly
-                  className="bg-muted cursor-not-allowed"
-                  placeholder="Calculado automaticamente"
+                  onChange={(e) => handleChange('fgtsAmount', e.target.value)}
+                  placeholder="0.00"
                 />
                 <p className="text-xs text-muted-foreground">
-                  Calculado automaticamente: 8% sobre o salário bruto
+                  Preenchido manualmente conforme necessário
                 </p>
               </div>
 
-
-              <div className="space-y-2">
-                <div className="flex items-center space-x-2">
-                  <input
-                    type="checkbox"
-                    id="autoCalculateTaxes"
-                    checked={formData.autoCalculateTaxes}
-                    onChange={(e) => handleChange('autoCalculateTaxes', e.target.checked)}
-                    className="rounded"
+              {/* Rubricas Específicas do Funcionário */}
+              {formData.employeeId && (
+                <div className="col-span-2">
+                  <EmployeeRubricsDisplay
+                    employeeId={formData.employeeId}
+                    baseSalary={Number(formData.baseSalary) || 0}
+                    month={Number(formData.month)}
+                    year={Number(formData.year)}
+                    showTotals={true}
                   />
-                  <Label htmlFor="autoCalculateTaxes" className="text-sm">
-                    Calcular INSS e IRRF automaticamente
-                  </Label>
                 </div>
-                <p className="text-xs text-muted-foreground">
-                  Baseado nas tabelas oficiais de 2024
-                </p>
-              </div>
+              )}
+
+
             </div>
 
             <div className="flex justify-end space-x-2">

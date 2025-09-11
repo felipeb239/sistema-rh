@@ -4,26 +4,26 @@ import Link from 'next/link'
 import { useSession, signOut } from 'next-auth/react'
 import { usePathname } from 'next/navigation'
 import { cn } from '@/lib/utils'
-import { 
-  LayoutDashboard, 
-  Users, 
-  FileText, 
-  Receipt, 
-  Settings, 
+import {
+  Users,
+  FileText,
+  Receipt,
+  Settings,
   UserCog,
   LogOut,
   Menu,
   X,
-  Building2
+  Building2,
+  Calculator
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { useState } from 'react'
 import { useCompanySettings } from '@/hooks/use-company-settings'
 
 const navigation = [
-  { name: 'Dashboard', href: '/', icon: LayoutDashboard },
+  { name: 'Folha de Pagamento', href: '/payroll', icon: FileText },
   { name: 'Funcionários', href: '/employees', icon: Users },
-  { name: 'Holerites', href: '/payroll', icon: FileText },
+  { name: 'Rubricas', href: '/rubrics', icon: Calculator },
   { name: 'Recibos', href: '/receipts', icon: Receipt },
   { name: 'Configurações', href: '/settings', icon: Settings },
 ]

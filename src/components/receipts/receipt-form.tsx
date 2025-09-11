@@ -230,7 +230,7 @@ export function ReceiptForm({ receipt, employees, onClose }: ReceiptFormProps) {
                   value={formData.year}
                   onChange={(e) => handleChange('year', e.target.value)}
                   required
-                  placeholder="2024"
+                  placeholder={new Date().getFullYear().toString()}
                 />
               </div>
 

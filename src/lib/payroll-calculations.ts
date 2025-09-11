@@ -57,7 +57,7 @@ export function calculateFGTS(grossSalary: number): { rate: number; amount: numb
 }
 
 /**
- * Calculate INSS discount based on current 2024 rates
+ * Calculate INSS discount based on current rates
  */
 export function calculateINSS(grossSalary: number): { rate: number; discount: number } {
   const inssRates = [
@@ -81,7 +81,7 @@ export function calculateINSS(grossSalary: number): { rate: number; discount: nu
   }
 
   // Maximum INSS discount cap
-  const maxINSS = 951.63 // 2024 limit: R$ 951,63
+  const maxINSS = 951.63 // Limite atual: R$ 951,63
   totalDiscount = Math.min(totalDiscount, maxINSS)
 
   return {
@@ -91,7 +91,7 @@ export function calculateINSS(grossSalary: number): { rate: number; discount: nu
 }
 
 /**
- * Calculate IRRF discount based on current 2024 rates
+ * Calculate IRRF discount based on current rates
  */
 export function calculateIRRF(grossSalary: number, inssDiscount: number, dependents: number = 0): { rate: number; discount: number } {
   const dependentDeduction = 189.59 * dependents

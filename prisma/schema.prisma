@@ -22,18 +22,19 @@ model User {
 }
 
 model Employee {
-  id         String    @id @default(cuid())
-  name       String
-  cpf        String?
-  position   String?
-  department String?
-  hireDate   DateTime? @map("hire_date")
-  salary     Decimal?  @db.Decimal(10, 2)
-  status     String    @default("active")
-  createdAt  DateTime  @default(now()) @map("created_at")
-  updatedAt  DateTime  @updatedAt @map("updated_at")
-  payrolls   Payroll[]
-  receipts   Receipt[]
+  id             String          @id @default(cuid())
+  name           String
+  cpf            String?
+  position       String?
+  department     String?
+  hireDate       DateTime?       @map("hire_date")
+  salary         Decimal?        @db.Decimal(10, 2)
+  status         String          @default("active")
+  createdAt      DateTime        @default(now()) @map("created_at")
+  updatedAt      DateTime        @updatedAt @map("updated_at")
+  payrolls       Payroll[]
+  receipts       Receipt[]
+  employeeRubrics EmployeeRubric[]
 
   @@map("employees")
 }
@@ -125,14 +126,34 @@ model Position {
 }
 
 model PayrollRubric {
-  id          String    @id @default(cuid())
-  name        String    @unique
-  description String?
-  type        String    // 'discount' or 'benefit'
-  code        String?   // Código da rubrica (ex: 2801, 3405)
-  isActive    Boolean   @default(true) @map("is_active")
-  createdAt   DateTime  @default(now()) @map("created_at")
-  updatedAt   DateTime  @updatedAt @map("updated_at")
+  id             String          @id @default(cuid())
+  name           String
+  description    String?
+  type           String          // 'discount' or 'benefit'
+  code           String?         // Código da rubrica (ex: 2801, 3405)
+  isActive       Boolean         @default(true) @map("is_active")
+  createdAt      DateTime        @default(now()) @map("created_at")
+  updatedAt      DateTime        @updatedAt @map("updated_at")
+  employeeRubrics EmployeeRubric[]
 
   @@map("payroll_rubrics")
+}
+
+model EmployeeRubric {
+  id              String        @id @default(cuid())
+  employeeId      String        @map("employee_id")
+  rubricId        String        @map("rubric_id")
+  customName      String?       @map("custom_name")
+  customValue     Decimal?      @map("custom_value") @db.Decimal(10, 2)
+  customPercentage Decimal?     @map("custom_percentage") @db.Decimal(5, 4)
+  isActive        Boolean       @default(true) @map("is_active")
+  startDate       DateTime?     @map("start_date")
+  endDate         DateTime?     @map("end_date")
+  createdAt       DateTime      @default(now()) @map("created_at")
+  updatedAt       DateTime      @updatedAt @map("updated_at")
+  employee        Employee      @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  rubric          PayrollRubric @relation(fields: [rubricId], references: [id], onDelete: Cascade)
+
+  @@unique([employeeId, rubricId], name: "employee_rubric_unique")
+  @@map("employee_rubrics")
 }

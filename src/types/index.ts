@@ -103,6 +103,27 @@ export interface PayrollRubric {
   isActive: boolean
   createdAt: Date
   updatedAt: Date
+  employeeRubrics?: EmployeeRubric[]
+}
+
+export interface EmployeeRubric {
+  id: string
+  employeeId: string
+  employee?: Employee
+  rubricId: string
+  rubric?: PayrollRubric
+  customName?: string
+  customValue?: number
+  customPercentage?: number
+  isActive: boolean
+  startDate?: Date
+  endDate?: Date
+  createdAt: Date
+  updatedAt: Date
+}
+
+export interface EmployeeWithRubrics extends Employee {
+  employeeRubrics: (EmployeeRubric & { rubric: PayrollRubric })[]
 }
 
 export interface DashboardData {

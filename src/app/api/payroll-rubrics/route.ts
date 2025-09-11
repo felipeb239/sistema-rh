@@ -36,24 +36,40 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json()
+    console.log('Payroll rubric POST body:', body)
     const { name, description, type, code } = body
 
-    if (!name || !type) {
-      return NextResponse.json({ error: 'Nome e tipo são obrigatórios' }, { status: 400 })
+    console.log('Validating fields:', { 
+      name: name, 
+      nameTrimmed: name?.trim(), 
+      type: type,
+      nameLength: name?.length,
+      typeValid: ['discount', 'benefit'].includes(type)
+    })
+
+    if (!name || !name.trim()) {
+      console.log('Validation error: missing or empty name', { name })
+      return NextResponse.json({ error: 'Nome é obrigatório' }, { status: 400 })
+    }
+
+    if (!type) {
+      console.log('Validation error: missing type', { type })
+      return NextResponse.json({ error: 'Tipo é obrigatório' }, { status: 400 })
     }
 
     if (!['discount', 'benefit'].includes(type)) {
+      console.log('Validation error: invalid type', { type })
       return NextResponse.json({ error: 'Tipo deve ser "discount" ou "benefit"' }, { status: 400 })
     }
 
-    // Verificar se já existe uma rubrica com o mesmo nome
-    const existingRubric = await prisma.payrollRubric.findUnique({
-      where: { name }
-    })
+    console.log('All validations passed, proceeding to create rubric')
 
-    if (existingRubric) {
-      return NextResponse.json({ error: 'Já existe uma rubrica com este nome' }, { status: 400 })
-    }
+    console.log('Creating new rubric with data:', {
+      name,
+      description: description || null,
+      type,
+      code: code || null
+    })
 
     const rubric = await prisma.payrollRubric.create({
       data: {
@@ -64,6 +80,7 @@ export async function POST(request: NextRequest) {
       }
     })
 
+    console.log('Rubric created successfully:', rubric)
     return NextResponse.json(rubric)
   } catch (error) {
     console.error('Payroll rubric POST error:', error)

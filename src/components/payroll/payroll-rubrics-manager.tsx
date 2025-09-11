@@ -124,6 +124,19 @@ export function PayrollRubricsManager() {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     
+    // Validação adicional no frontend
+    if (!formData.name.trim()) {
+      alert('Nome da rubrica é obrigatório')
+      return
+    }
+    
+    if (!formData.type) {
+      alert('Tipo da rubrica é obrigatório')
+      return
+    }
+    
+    console.log('Submitting rubric data:', formData)
+    
     if (editingRubric) {
       updateMutation.mutate({
         id: editingRubric.id,
