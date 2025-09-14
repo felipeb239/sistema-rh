@@ -97,7 +97,8 @@ export function PayrollContent() {
   const handleExportIndividual = async (payrollId: string, format: 'pdf' | 'csv') => {
     try {
       setIsExporting(payrollId)
-      const url = `/api/export/individual-payroll?id=${payrollId}&format=${format}`
+      // Usar a nova API que não inclui recibos nos holerites individuais
+      const url = `/api/export/individual-payroll-clean?id=${payrollId}&format=${format}`
       
       const response = await fetch(url)
       if (!response.ok) {

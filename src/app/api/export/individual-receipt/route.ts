@@ -250,6 +250,9 @@ export async function GET(request: NextRequest) {
                             <span class="label">Cargo: ${receipt.employee?.position || ''}</span>
                             <span class="label">Departamento: ${receipt.employee?.department || ''}</span>
                         </div>
+                        <div class="info-row">
+                            <span class="label">Período: ${getMonthName(receipt.month)} - 01 a ${getLastDayOfMonth(receipt.year, receipt.month)} de ${receipt.year}</span>
+                        </div>
                     </div>
 
                     <div class="receipt-details">
@@ -313,6 +316,9 @@ export async function GET(request: NextRequest) {
                         <div class="info-row">
                             <span class="label">Cargo: ${receipt.employee?.position || ''}</span>
                             <span class="label">Departamento: ${receipt.employee?.department || ''}</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="label">Período: ${getMonthName(receipt.month)} - 01 a ${getLastDayOfMonth(receipt.year, receipt.month)} de ${receipt.year}</span>
                         </div>
                     </div>
 

@@ -173,11 +173,11 @@ export function RubricForm({ employee, availableRubrics, existingRubric, onSave,
                     <span className="text-xs text-muted-foreground">({rubric.code})</span>
                   )}
                   <span className={`text-xs px-1 py-0.5 rounded ${
-                    rubric.type === 'benefit' 
+                    rubric.type === 'proventos' 
                       ? 'bg-green-100 text-green-800' 
                       : 'bg-red-100 text-red-800'
                   }`}>
-                    {rubric.type === 'benefit' ? 'Benefício' : 'Desconto'}
+                    {rubric.type === 'proventos' ? 'Proventos' : 'Desconto'}
                   </span>
                 </div>
               </SelectItem>

@@ -21,8 +21,8 @@ export async function PUT(
       return NextResponse.json({ error: 'Nome e tipo são obrigatórios' }, { status: 400 })
     }
 
-    if (!['discount', 'benefit'].includes(type)) {
-      return NextResponse.json({ error: 'Tipo deve ser "discount" ou "benefit"' }, { status: 400 })
+    if (!['discount', 'proventos'].includes(type)) {
+      return NextResponse.json({ error: 'Tipo deve ser "discount" ou "proventos"' }, { status: 400 })
     }
 
     // Verificar se já existe outra rubrica com o mesmo nome

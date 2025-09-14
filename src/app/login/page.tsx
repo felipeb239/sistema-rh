@@ -7,12 +7,17 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
+import { toast } from 'sonner'
 
 export default function LoginPage() {
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState('')
+  const [isForgotPasswordOpen, setIsForgotPasswordOpen] = useState(false)
+  const [forgotEmail, setForgotEmail] = useState('')
+  const [isSendingEmail, setIsSendingEmail] = useState(false)
   const router = useRouter()
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -53,6 +58,39 @@ export default function LoginPage() {
       setError('Erro ao fazer login')
     } finally {
       setIsLoading(false)
+    }
+  }
+
+  const handleForgotPassword = async () => {
+    if (!forgotEmail || !forgotEmail.includes('@')) {
+      toast.error('Digite um e-mail válido')
+      return
+    }
+
+    setIsSendingEmail(true)
+    try {
+      const response = await fetch('/api/auth/forgot-password', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email: forgotEmail })
+      })
+
+      const result = await response.json()
+
+      if (response.ok) {
+        toast.success('Se este e-mail estiver cadastrado, você receberá instruções de recuperação em instantes.')
+        setIsForgotPasswordOpen(false)
+        setForgotEmail('')
+      } else {
+        toast.error(result.message || 'Erro ao enviar e-mail de recuperação')
+      }
+    } catch (error) {
+      console.error('Erro ao enviar e-mail:', error)
+      toast.error('Erro ao enviar e-mail de recuperação')
+    } finally {
+      setIsSendingEmail(false)
     }
   }
 
@@ -103,12 +141,52 @@ export default function LoginPage() {
               {isLoading ? 'Entrando...' : 'Entrar'}
             </Button>
           </form>
-          <div className="mt-4 text-center text-sm text-muted-foreground">
-            <p>Usuário padrão: admin</p>
-            <p>Senha padrão: admin</p>
+          
+          <div className="mt-4 text-center">
+            <button
+              type="button"
+              onClick={() => setIsForgotPasswordOpen(true)}
+              className="text-sm text-muted-foreground hover:text-primary underline"
+            >
+              Esqueci minha senha
+            </button>
           </div>
         </CardContent>
       </Card>
+
+      {/* Modal de Esqueci Minha Senha */}
+      <Dialog open={isForgotPasswordOpen} onOpenChange={setIsForgotPasswordOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Recuperar Senha</DialogTitle>
+            <DialogDescription>
+              Informe seu e-mail cadastrado para receber instruções de recuperação de senha.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="forgot-email">E-mail</Label>
+              <Input
+                id="forgot-email"
+                type="email"
+                value={forgotEmail}
+                onChange={(e) => setForgotEmail(e.target.value)}
+                placeholder="Digite seu e-mail"
+                required
+              />
+            </div>
+            
+            <Button
+              onClick={handleForgotPassword}
+              disabled={isSendingEmail}
+              className="w-full"
+            >
+              {isSendingEmail ? 'Enviando...' : 'Enviar Instruções'}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

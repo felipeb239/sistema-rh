@@ -16,6 +16,7 @@ async function main() {
       name: 'Administrador',
       email: 'admin@empresa.com',
       role: 'admin',
+      level: 3, // NOVO - Nível 3: Administrador
       status: 'active'
     }
   })
@@ -30,6 +31,22 @@ async function main() {
       name: 'Usuário Comum',
       email: 'user@empresa.com',
       role: 'user',
+      level: 2, // NOVO - Nível 2: Sistema Completo
+      status: 'active'
+    }
+  })
+
+  // Criar usuário secretaria
+  const secretaria = await prisma.user.upsert({
+    where: { username: 'secretaria' },
+    update: {},
+    create: {
+      username: 'secretaria',
+      password: hashedPassword,
+      name: 'Secretária',
+      email: 'secretaria@empresa.com',
+      role: 'user',
+      level: 1, // NOVO - Nível 1: Secretaria
       status: 'active'
     }
   })
@@ -105,90 +122,62 @@ async function main() {
   ])
 
   // Criar rubricas padrão para holerites
-  const payrollRubrics = await Promise.all([
-    // Descontos
-    prisma.payrollRubric.upsert({
-      where: { name: 'INSS' },
-      update: {},
-      create: {
+  await prisma.payrollRubric.createMany({
+    data: [
+      {
         name: 'INSS',
         description: 'Desconto do INSS',
         type: 'discount',
         code: '2801'
-      }
-    }),
-    prisma.payrollRubric.upsert({
-      where: { name: 'IRRF' },
-      update: {},
-      create: {
+      },
+      {
         name: 'IRRF',
         description: 'Desconto do Imposto de Renda',
         type: 'discount',
         code: '2804'
-      }
-    }),
-    prisma.payrollRubric.upsert({
-      where: { name: 'Plano de Saúde' },
-      update: {},
-      create: {
+      },
+      {
         name: 'Plano de Saúde',
         description: 'Desconto do plano de saúde',
         type: 'discount',
         code: '3405'
-      }
-    }),
-    prisma.payrollRubric.upsert({
-      where: { name: 'Plano Odontológico' },
-      update: {},
-      create: {
+      },
+      {
         name: 'Plano Odontológico',
         description: 'Desconto do plano odontológico',
         type: 'discount',
         code: '3407'
-      }
-    }),
-    prisma.payrollRubric.upsert({
-      where: { name: 'Outros Descontos' },
-      update: {},
-      create: {
+      },
+      {
         name: 'Outros Descontos',
         description: 'Outros descontos diversos',
         type: 'discount',
         code: '3406'
       }
-    }),
-  ])
+    ],
+    skipDuplicates: true
+  })
 
   // Criar alguns funcionários de exemplo
-  const employees = await Promise.all([
-    prisma.employee.upsert({
-      where: { cpf: '12345678901' },
-      update: {},
-      create: {
+  const employees = await prisma.employee.createMany({
+    data: [
+      {
         name: 'João Silva',
         cpf: '12345678901',
         position: 'Desenvolvedor',
         department: 'TI',
         hireDate: new Date('2023-01-15'),
         salary: 5000.00
-      }
-    }),
-    prisma.employee.upsert({
-      where: { cpf: '98765432100' },
-      update: {},
-      create: {
+      },
+      {
         name: 'Maria Santos',
         cpf: '98765432100',
         position: 'Analista',
         department: 'RH',
         hireDate: new Date('2023-03-20'),
         salary: 4500.00
-      }
-    }),
-    prisma.employee.upsert({
-      where: { cpf: '11122233344' },
-      update: {},
-      create: {
+      },
+      {
         name: 'Pedro Costa',
         cpf: '11122233344',
         position: 'Gerente',
@@ -196,15 +185,25 @@ async function main() {
         hireDate: new Date('2022-11-10'),
         salary: 8000.00
       }
-    })
-  ])
+    ],
+    skipDuplicates: true
+  })
+
+  // Buscar os funcionários criados para usar nos holerites
+  const createdEmployees = await prisma.employee.findMany({
+    where: {
+      cpf: {
+        in: ['12345678901', '98765432100', '11122233344']
+      }
+    }
+  })
 
   // Criar alguns holerites de exemplo
   const currentDate = new Date()
   const currentMonth = currentDate.getMonth() + 1
   const currentYear = currentDate.getFullYear()
 
-  for (const employee of employees) {
+  for (const employee of createdEmployees) {
     await prisma.payroll.upsert({
       where: {
         employeeId_month_year: {
@@ -234,7 +233,7 @@ async function main() {
   }
 
   // Criar alguns recibos de exemplo
-  for (const employee of employees) {
+  for (const employee of createdEmployees) {
     // Buscar os tipos de recibos criados
     const valeTransporte = await prisma.receiptType.findUnique({
       where: { name: 'Vale Transporte' }
@@ -292,9 +291,10 @@ async function main() {
   })
 
   console.log('Seed completed successfully!')
-  console.log('Admin user created:', admin.username)
-  console.log('Regular user created:', user.username)
-  console.log('Employees created:', employees.length)
+  console.log('Admin user created:', admin.username, '(Level 3)')
+  console.log('Regular user created:', user.username, '(Level 2)')
+  console.log('Secretaria user created:', secretaria.username, '(Level 1)')
+  console.log('Employees created:', createdEmployees.length)
 }
 
 main()

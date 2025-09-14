@@ -195,7 +195,7 @@ export function PayrollForm({ payroll, onClose }: PayrollFormProps) {
             updatedData.otherDiscounts = '0'
             break
         }
-      } else if (rubric.type === 'benefit') {
+      } else if (rubric.type === 'proventos') {
         // Aplicar benefícios baseados no nome da rubrica
         switch (rubric.name.toLowerCase()) {
           case 'plano de saúde':

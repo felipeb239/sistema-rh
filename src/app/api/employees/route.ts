@@ -13,6 +13,14 @@ export async function GET(request: NextRequest) {
 
     const employees = await prisma.employee.findMany({
       where: { status: 'active' },
+      include: {
+        employeeRubrics: {
+          where: { isActive: true },
+          include: {
+            rubric: true
+          }
+        }
+      },
       orderBy: { name: 'asc' }
     })
 

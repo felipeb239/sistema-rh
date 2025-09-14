@@ -89,6 +89,10 @@ export async function POST(
 
     const employeeId = params.id
     const body = await request.json()
+    
+    console.log('🔧 Criando rubrica para funcionário:', employeeId)
+    console.log('📋 Dados recebidos:', body)
+    
     const { 
       rubricId, 
       customName, 
@@ -100,10 +104,12 @@ export async function POST(
 
     // Validar dados
     if (!rubricId) {
+      console.log('❌ Erro: ID da rubrica é obrigatório')
       return NextResponse.json({ error: 'ID da rubrica é obrigatório' }, { status: 400 })
     }
 
     if (!customValue && !customPercentage) {
+      console.log('❌ Erro: Valor fixo ou percentual é obrigatório')
       return NextResponse.json({ 
         error: 'Valor fixo ou percentual é obrigatório' 
       }, { status: 400 })
@@ -127,13 +133,12 @@ export async function POST(
       return NextResponse.json({ error: 'Rubrica não encontrada' }, { status: 404 })
     }
 
-    // Verificar se já existe uma rubrica aplicada para este colaborador
-    const existingRubric = await prisma.employeeRubric.findUnique({
+    // Verificar se já existe uma rubrica ativa aplicada para este colaborador
+    const existingRubric = await prisma.employeeRubric.findFirst({
       where: {
-        employee_rubric_unique: {
-          employeeId,
-          rubricId
-        }
+        employeeId,
+        rubricId,
+        isActive: true
       }
     })
 

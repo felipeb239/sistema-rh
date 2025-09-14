@@ -28,7 +28,7 @@ async function fetchPayrollRubrics() {
   return response.json()
 }
 
-async function createPayrollRubric(data: { name: string; description?: string; type: 'discount' | 'benefit'; code?: string }) {
+async function createPayrollRubric(data: { name: string; description?: string; type: 'discount' | 'proventos'; code?: string }) {
   const response = await fetch('/api/payroll-rubrics', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -40,7 +40,7 @@ async function createPayrollRubric(data: { name: string; description?: string; t
   return response.json()
 }
 
-async function updatePayrollRubric(id: string, data: { name: string; description?: string; type: 'discount' | 'benefit'; code?: string; isActive?: boolean }) {
+async function updatePayrollRubric(id: string, data: { name: string; description?: string; type: 'discount' | 'proventos'; code?: string; isActive?: boolean }) {
   const response = await fetch(`/api/payroll-rubrics/${id}`, {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
@@ -70,7 +70,7 @@ export function PayrollRubricsManager() {
   const [formData, setFormData] = useState({ 
     name: '', 
     description: '', 
-    type: 'discount' as 'discount' | 'benefit',
+    type: 'discount' as 'discount' | 'proventos',
     code: ''
   })
   const queryClient = useQueryClient()
@@ -166,7 +166,7 @@ export function PayrollRubricsManager() {
   }
 
   const discountRubrics = rubrics.filter((r: PayrollRubric) => r.type === 'discount')
-  const benefitRubrics = rubrics.filter((r: PayrollRubric) => r.type === 'benefit')
+  const benefitRubrics = rubrics.filter((r: PayrollRubric) => r.type === 'proventos')
 
   return (
     <Card>
@@ -212,7 +212,7 @@ export function PayrollRubricsManager() {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="discount">Desconto</SelectItem>
-                    <SelectItem value="benefit">Benefício</SelectItem>
+                    <SelectItem value="proventos">Proventos</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -300,7 +300,7 @@ export function PayrollRubricsManager() {
 
           {/* Benefícios */}
           <div>
-            <h3 className="text-lg font-semibold mb-3 text-green-600">Benefícios</h3>
+            <h3 className="text-lg font-semibold mb-3 text-green-600">Proventos</h3>
             <div className="space-y-2">
               {benefitRubrics.map((rubric: PayrollRubric) => (
                 <div
@@ -341,7 +341,7 @@ export function PayrollRubricsManager() {
               ))}
               {benefitRubrics.length === 0 && (
                 <div className="text-center py-4 text-muted-foreground">
-                  Nenhum benefício encontrado
+                  Nenhum provento encontrado
                 </div>
               )}
             </div>

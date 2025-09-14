@@ -245,10 +245,10 @@ export function EmployeeRubricsManager({
                         <div className="flex-1">
                           <div className="flex items-center space-x-2">
                             <Badge 
-                              variant={rubric.rubric.type === 'benefit' ? 'default' : 'destructive'}
+                              variant={rubric.rubric.type === 'proventos' ? 'default' : 'destructive'}
                               className="text-xs"
                             >
-                              {rubric.rubric.type === 'benefit' ? 'Benefício' : 'Desconto'}
+                              {rubric.rubric.type === 'proventos' ? 'Proventos' : 'Desconto'}
                             </Badge>
                             <span className="font-medium">
                               {rubric.customName || rubric.rubric.name}

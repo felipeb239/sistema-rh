@@ -108,14 +108,41 @@ export async function GET(request: NextRequest) {
                             Number(payroll.customDiscount || 0) + 
                             Number(payroll.otherDiscounts || 0)
       
-      // Calcular rubricas específicas apenas para exibição no PDF
-      const calculatedRubrics = payroll.employee?.employeeRubrics ? 
-        calculateEmployeeRubrics(
-          payroll.employee.employeeRubrics,
-          Number(payroll.baseSalary),
-          payroll.month,
-          payroll.year
-        ) : []
+      // Usar rubricas já calculadas na geração da folha (evitar duplicação)
+      const calculatedRubrics: any[] = []
+      
+      // Adicionar apenas as rubricas que têm valores específicos no holerite
+      if (Number(payroll.healthInsurance) > 0) {
+        calculatedRubrics.push({
+          name: 'Plano de Saúde',
+          value: Number(payroll.healthInsurance),
+          isBenefit: false
+        })
+      }
+      
+      if (Number(payroll.dentalInsurance) > 0) {
+        calculatedRubrics.push({
+          name: 'Plano Odontológico',
+          value: Number(payroll.dentalInsurance),
+          isBenefit: false
+        })
+      }
+      
+      if (Number(payroll.customDiscount) > 0) {
+        calculatedRubrics.push({
+          name: payroll.customDiscountDescription || 'Desconto Personalizado',
+          value: Number(payroll.customDiscount),
+          isBenefit: false
+        })
+      }
+      
+      if (Number(payroll.otherDiscounts) > 0) {
+        calculatedRubrics.push({
+          name: 'Outros Descontos',
+          value: Number(payroll.otherDiscounts),
+          isBenefit: false
+        })
+      }
       
       // Debug: verificar cálculos
       console.log('PDF Calculation Debug:', {
@@ -127,6 +154,21 @@ export async function GET(request: NextRequest) {
       })
       
       const fgts = (baseSalary * 0.08).toFixed(2)
+      
+      // Calcular base de contribuição INSS (Salário + Anuênio)
+      let inssBase = Number(payroll.baseSalary)
+      const anuenioRubric = payroll.employee?.employeeRubrics?.find(er => 
+        er.isActive && (
+          er.customName?.toLowerCase().includes('anuênio') ||
+          er.customName?.toLowerCase().includes('aniversário') ||
+          er.rubric?.name?.toLowerCase().includes('anuênio') ||
+          er.rubric?.name?.toLowerCase().includes('aniversário')
+        )
+      )
+      
+      if (anuenioRubric && Number(anuenioRubric.customValue) > 0) {
+        inssBase += Number(anuenioRubric.customValue)
+      }
 
       const htmlContent = `
         <!DOCTYPE html>
@@ -267,6 +309,30 @@ export async function GET(request: NextRequest) {
                             <td class="text-right">${formatCurrency(Number(payroll.baseSalary))}</td>
                             <td class="text-right">-</td>
                         </tr>
+                        ${(() => {
+                          // Buscar anuênio aplicado ao funcionário
+                          const anuenioRubric = payroll.employee?.employeeRubrics?.find(er => 
+                            er.isActive && (
+                              er.customName?.toLowerCase().includes('anuênio') ||
+                              er.customName?.toLowerCase().includes('aniversário') ||
+                              er.rubric?.name?.toLowerCase().includes('anuênio') ||
+                              er.rubric?.name?.toLowerCase().includes('aniversário')
+                            )
+                          )
+                          
+                          if (anuenioRubric && Number(anuenioRubric.customValue) > 0) {
+                            return `
+                        <tr>
+                            <td class="text-center">2</td>
+                            <td>ANUÊNIO</td>
+                            <td class="text-center">-</td>
+                            <td class="text-right">${formatCurrency(Number(anuenioRubric.customValue))}</td>
+                            <td class="text-right">-</td>
+                        </tr>
+                            `
+                          }
+                          return ''
+                        })()}
                         <!-- Campos removidos: overtimeHours, bonuses, foodAllowance, transportAllowance, otherBenefits -->
                         ${Number(payroll.inssDiscount) > 0 ? `
                         <tr>
@@ -295,35 +361,24 @@ export async function GET(request: NextRequest) {
                             <td class="text-right">${formatCurrency(Number(payroll.healthInsurance))}</td>
                         </tr>
                         ` : ''}
+                        ${Number(payroll.customDiscount) > 0 ? `
+                        <tr>
+                            <td class="text-center">3409</td>
+                            <td>${payroll.customDiscountDescription || 'EMPRÉSTIMO'}</td>
+                            <td class="text-center">-</td>
+                            <td class="text-right">-</td>
+                            <td class="text-right">${formatCurrency(Number(payroll.customDiscount))}</td>
+                        </tr>
+                        ` : ''}
                         ${Number(payroll.otherDiscounts) > 0 ? `
                         <tr>
                             <td class="text-center">3406</td>
-                            <td>${payroll.customDiscountDescription || 'OUTROS DESCONTOS'}</td>
+                            <td>OUTROS DESCONTOS</td>
                             <td class="text-center">-</td>
                             <td class="text-right">-</td>
                             <td class="text-right">${formatCurrency(Number(payroll.otherDiscounts))}</td>
                         </tr>
                         ` : ''}
-                        ${(() => {
-                          if (!payroll.employee?.employeeRubrics) return ''
-                          
-                          const calculatedRubrics = calculateEmployeeRubrics(
-                            payroll.employee.employeeRubrics,
-                            Number(payroll.baseSalary),
-                            payroll.month,
-                            payroll.year
-                          )
-                          
-                          return calculatedRubrics.map((rubric, index) => `
-                        <tr>
-                            <td class="text-center">${3407 + index}</td>
-                            <td>${rubric.name.toUpperCase()}</td>
-                            <td class="text-center">-</td>
-                            <td class="text-right">${rubric.isBenefit ? formatCurrency(rubric.value) : '-'}</td>
-                            <td class="text-right">${!rubric.isBenefit ? formatCurrency(rubric.value) : '-'}</td>
-                        </tr>
-                        `).join('')
-                        })()}
                     </tbody>
                 </table>
 
@@ -352,11 +407,11 @@ export async function GET(request: NextRequest) {
                         </div>
                         <div class="summary-item">
                             <span>Sal. Contr. INSS:</span>
-                            <span>${formatCurrency(baseSalary)}</span>
+                            <span>${formatCurrency(inssBase)}</span>
                         </div>
                         <div class="summary-item">
                             <span>Base de Cálc. FGTS:</span>
-                            <span>${formatCurrency(baseSalary)}</span>
+                            <span>${formatCurrency(inssBase)}</span>
                         </div>
                         <div class="summary-item">
                             <span>F.G.T.S. do Mês:</span>
@@ -455,6 +510,30 @@ export async function GET(request: NextRequest) {
                                 <td class="text-right">${formatCurrency(Number(payroll.baseSalary))}</td>
                                 <td class="text-right">-</td>
                             </tr>
+                            ${(() => {
+                              // Buscar anuênio aplicado ao funcionário
+                              const anuenioRubric = payroll.employee?.employeeRubrics?.find(er => 
+                                er.isActive && (
+                                  er.customName?.toLowerCase().includes('anuênio') ||
+                                  er.customName?.toLowerCase().includes('aniversário') ||
+                                  er.rubric?.name?.toLowerCase().includes('anuênio') ||
+                                  er.rubric?.name?.toLowerCase().includes('aniversário')
+                                )
+                              )
+                              
+                              if (anuenioRubric && Number(anuenioRubric.customValue) > 0) {
+                                return `
+                            <tr>
+                                <td class="text-center">2</td>
+                                <td>ANUÊNIO</td>
+                                <td class="text-center">-</td>
+                                <td class="text-right">${formatCurrency(Number(anuenioRubric.customValue))}</td>
+                                <td class="text-right">-</td>
+                            </tr>
+                                `
+                              }
+                              return ''
+                            })()}
                             ${Number(payroll.inssDiscount) > 0 ? `
                             <tr>
                                 <td class="text-center">2801</td>
@@ -482,35 +561,24 @@ export async function GET(request: NextRequest) {
                                 <td class="text-right">${formatCurrency(Number(payroll.healthInsurance))}</td>
                             </tr>
                             ` : ''}
+                            ${Number(payroll.customDiscount) > 0 ? `
+                            <tr>
+                                <td class="text-center">3409</td>
+                                <td>${payroll.customDiscountDescription || 'EMPRÉSTIMO'}</td>
+                                <td class="text-center">-</td>
+                                <td class="text-right">-</td>
+                                <td class="text-right">${formatCurrency(Number(payroll.customDiscount))}</td>
+                            </tr>
+                            ` : ''}
                             ${Number(payroll.otherDiscounts) > 0 ? `
                             <tr>
                                 <td class="text-center">3406</td>
-                                <td>${payroll.customDiscountDescription || 'OUTROS DESCONTOS'}</td>
+                                <td>OUTROS DESCONTOS</td>
                                 <td class="text-center">-</td>
                                 <td class="text-right">-</td>
                                 <td class="text-right">${formatCurrency(Number(payroll.otherDiscounts))}</td>
                             </tr>
                             ` : ''}
-                            ${(() => {
-                              if (!payroll.employee?.employeeRubrics) return ''
-                              
-                              const calculatedRubrics = calculateEmployeeRubrics(
-                                payroll.employee.employeeRubrics,
-                                Number(payroll.baseSalary),
-                                payroll.month,
-                                payroll.year
-                              )
-                              
-                              return calculatedRubrics.map((rubric, index) => `
-                            <tr>
-                                <td class="text-center">${3407 + index}</td>
-                                <td>${rubric.name.toUpperCase()}</td>
-                                <td class="text-center">-</td>
-                                <td class="text-right">${rubric.isBenefit ? formatCurrency(rubric.value) : '-'}</td>
-                                <td class="text-right">${!rubric.isBenefit ? formatCurrency(rubric.value) : '-'}</td>
-                            </tr>
-                            `).join('')
-                            })()}
                         </tbody>
                     </table>
 
@@ -539,11 +607,11 @@ export async function GET(request: NextRequest) {
                             </div>
                             <div class="summary-item">
                                 <span>Sal. Contr. INSS:</span>
-                                <span>${formatCurrency(baseSalary)}</span>
+                                <span>${formatCurrency(inssBase)}</span>
                             </div>
                             <div class="summary-item">
                                 <span>Base de Cálc. FGTS:</span>
-                                <span>${formatCurrency(baseSalary)}</span>
+                                <span>${formatCurrency(inssBase)}</span>
                             </div>
                             <div class="summary-item">
                                 <span>F.G.T.S. do Mês:</span>

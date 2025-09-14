@@ -17,21 +17,17 @@ export async function GET(request: NextRequest) {
     const page = parseInt(searchParams.get('page') || '1')
     const limit = 15 // Fixado em 15 recibos por página
 
-    // TEMPORÁRIO: Desabilitar filtros para debug
+    // Aplicar filtros de ano e mês
     const where: any = {}
-    // if (year) where.year = parseInt(year)
-    // if (month) where.month = parseInt(month)
+    if (year) where.year = parseInt(year)
+    if (month) where.month = parseInt(month)
     
-    console.log('Filters applied:', { year, month, where })
 
     // Buscar total de recibos para calcular total de páginas
     const totalReceipts = await prisma.receipt.count({ where })
     const totalPages = Math.ceil(totalReceipts / limit)
     const skip = (page - 1) * limit
 
-    // TEMPORÁRIO: Buscar TODOS os recibos sem filtros para debug
-    const allReceipts = await prisma.receipt.findMany()
-    console.log('TODOS OS RECIBOS NO BANCO:', allReceipts)
 
     const receipts = await prisma.receipt.findMany({
       where,
@@ -57,17 +53,6 @@ export async function GET(request: NextRequest) {
       take: limit
     })
 
-    console.log('Receipts query result:', {
-      totalReceipts,
-      receiptsCount: receipts.length,
-      receipts: receipts.map(r => ({
-        id: r.id,
-        employeeName: r.employee?.name,
-        typeName: r.type?.name,
-        month: r.month,
-        year: r.year
-      }))
-    })
 
     return NextResponse.json({
       data: receipts,

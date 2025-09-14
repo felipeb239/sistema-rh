@@ -39,6 +39,8 @@ export interface Payroll {
   grossSalary: number
   netSalary: number
   fgtsAmount: number
+  receiptBenefits: number
+  receiptDiscounts: number
   createdAt: Date
   updatedAt: Date
 }
@@ -98,7 +100,7 @@ export interface PayrollRubric {
   id: string
   name: string
   description?: string
-  type: 'discount' | 'benefit'
+  type: 'discount' | 'proventos'
   code?: string
   isActive: boolean
   createdAt: Date

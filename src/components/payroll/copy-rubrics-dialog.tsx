@@ -146,7 +146,7 @@ export function CopyRubricsDialog({ currentEmployeeId, onCopy }: CopyRubricsDial
                   </div>
                   
                   <div className="space-y-2">
-                    <h4 className="font-medium text-green-600">Benefícios</h4>
+                    <h4 className="font-medium text-green-600">Proventos</h4>
                     <div className="space-y-1 text-sm">
                       {Number(latestPayroll.healthInsurance) > 0 && (
                         <div className="flex justify-between">

@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { useSession, signOut } from 'next-auth/react'
-import { usePathname } from 'next/navigation'
+import { usePathname, useRouter } from 'next/navigation'
 import { cn } from '@/lib/utils'
 import {
   Users,
@@ -14,31 +14,71 @@ import {
   Menu,
   X,
   Building2,
-  Calculator
+  Calculator,
+  Phone,
+  Lock
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { useState } from 'react'
 import { useCompanySettings } from '@/hooks/use-company-settings'
+import { usePermissions } from '@/hooks/use-permissions'
+import { AccessDeniedModal } from '@/components/ui/access-denied-modal'
 
 const navigation = [
-  { name: 'Folha de Pagamento', href: '/payroll', icon: FileText },
-  { name: 'Funcionários', href: '/employees', icon: Users },
-  { name: 'Rubricas', href: '/rubrics', icon: Calculator },
-  { name: 'Recibos', href: '/receipts', icon: Receipt },
-  { name: 'Configurações', href: '/settings', icon: Settings },
+  { name: 'Folha de Pagamento', href: '/payroll', icon: FileText, module: 'payroll' },
+  { name: 'Funcionários', href: '/employees', icon: Users, module: 'employees' },
+  { name: 'Rubricas', href: '/rubrics', icon: Calculator, module: 'rubrics' },
+  { name: 'Recibos', href: '/receipts', icon: Receipt, module: 'receipts' },
+  { name: 'Secretaria', href: '/secretaria', icon: Phone, module: 'secretaria' },
+  { name: 'Configurações', href: '/settings', icon: Settings, module: 'settings' },
 ]
 
 const adminNavigation = [
-  { name: 'Usuários', href: '/users', icon: UserCog },
+  { name: 'Usuários', href: '/users', icon: UserCog, module: 'users' },
 ]
 
 export function Sidebar() {
   const { data: session } = useSession()
   const pathname = usePathname()
+  const router = useRouter()
   const [isOpen, setIsOpen] = useState(false)
   const { data: companySettings } = useCompanySettings()
+  const { canAccess, user } = usePermissions()
+  const [accessDeniedModal, setAccessDeniedModal] = useState<{
+    isOpen: boolean
+    moduleName: string
+  }>({ isOpen: false, moduleName: '' })
 
   const isAdmin = session?.user?.role === 'admin'
+
+  const handleLogout = async () => {
+    console.log('🔓 Iniciando logout...')
+    console.log('🌐 window.location.origin:', window.location.origin)
+    
+    // Forçar o IP correto para logout com timestamp para evitar cache
+    const timestamp = Date.now()
+    const correctUrl = `http://192.168.10.31:3000/login?t=${timestamp}`
+    console.log('🎯 URL de logout forçada:', correctUrl)
+    
+    // Usar apenas o NextAuth com redirect automático
+    await signOut({ 
+      callbackUrl: correctUrl
+    })
+  }
+
+  const handleNavigationClick = (e: React.MouseEvent, item: any) => {
+    e.preventDefault()
+    
+    if (canAccess.module(item.module)) {
+      router.push(item.href)
+      setIsOpen(false)
+    } else {
+      setAccessDeniedModal({
+        isOpen: true,
+        moduleName: item.name
+      })
+    }
+  }
 
   return (
     <>
@@ -55,7 +95,7 @@ export function Sidebar() {
 
       {/* Sidebar */}
       <div className={cn(
-        "fixed inset-y-0 left-0 z-40 w-60 sm:w-64 lg:w-72 bg-card border-r transform transition-transform duration-200 ease-in-out lg:translate-x-0",
+        "fixed inset-y-0 left-0 z-40 w-60 xl:w-64 2xl:w-72 bg-card border-r transform transition-transform duration-200 ease-in-out lg:translate-x-0",
         isOpen ? "translate-x-0" : "-translate-x-full"
       )}>
         <div className="flex flex-col h-full">
@@ -97,52 +137,58 @@ export function Sidebar() {
           <nav className="flex-1 px-4 py-6 space-y-2">
             {navigation.map((item) => {
               const isActive = pathname === item.href
+              const hasAccess = canAccess.module(item.module as any)
+              
               return (
-                <Link
+                <button
                   key={item.name}
-                  href={item.href}
+                  onClick={(e) => handleNavigationClick(e, item)}
                   className={cn(
-                    "flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors",
-                    isActive
-                      ? "bg-primary text-primary-foreground"
-                      : "text-muted-foreground hover:text-foreground hover:bg-accent"
+                    "w-full flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors",
+                    hasAccess
+                      ? isActive
+                        ? "bg-primary text-primary-foreground"
+                        : "text-muted-foreground hover:text-foreground hover:bg-accent"
+                      : "text-muted-foreground/50 cursor-not-allowed opacity-60"
                   )}
-                  onClick={() => setIsOpen(false)}
                 >
                   <item.icon className="mr-3 h-4 w-4" />
                   {item.name}
-                </Link>
+                  {!hasAccess && <Lock className="ml-auto h-3 w-3" />}
+                </button>
               )
             })}
 
-            {isAdmin && (
-              <div className="pt-4 border-t">
-                <p className="px-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                  Administração
-                </p>
-                <div className="mt-2 space-y-1">
-                  {adminNavigation.map((item) => {
-                    const isActive = pathname === item.href
-                    return (
-                      <Link
-                        key={item.name}
-                        href={item.href}
-                        className={cn(
-                          "flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors",
-                          isActive
+            <div className="pt-4 border-t">
+              <p className="px-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                Administração
+              </p>
+              <div className="mt-2 space-y-1">
+                {adminNavigation.map((item) => {
+                  const isActive = pathname === item.href
+                  const hasAccess = canAccess.module(item.module as any)
+                  
+                  return (
+                    <button
+                      key={item.name}
+                      onClick={(e) => handleNavigationClick(e, item)}
+                      className={cn(
+                        "w-full flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors",
+                        hasAccess
+                          ? isActive
                             ? "bg-primary text-primary-foreground"
                             : "text-muted-foreground hover:text-foreground hover:bg-accent"
-                        )}
-                        onClick={() => setIsOpen(false)}
-                      >
-                        <item.icon className="mr-3 h-4 w-4" />
-                        {item.name}
-                      </Link>
-                    )
-                  })}
-                </div>
+                          : "text-muted-foreground/50 cursor-not-allowed opacity-60"
+                      )}
+                    >
+                      <item.icon className="mr-3 h-4 w-4" />
+                      {item.name}
+                      {!hasAccess && <Lock className="ml-auto h-3 w-3" />}
+                    </button>
+                  )
+                })}
               </div>
-            )}
+            </div>
           </nav>
 
           {/* User info and logout */}
@@ -158,7 +204,9 @@ export function Sidebar() {
                   {session?.user?.name || session?.user?.username}
                 </p>
                 <p className="text-xs text-muted-foreground truncate">
-                  {session?.user?.role === 'admin' ? 'Administrador' : 'Usuário'}
+                  {user?.level === 1 && 'Secretaria'}
+                  {user?.level === 2 && 'Sistema Completo'}
+                  {user?.level === 3 && 'Administrador'}
                 </p>
               </div>
             </div>
@@ -166,7 +214,7 @@ export function Sidebar() {
               variant="outline"
               size="sm"
               className="w-full"
-              onClick={() => signOut()}
+              onClick={handleLogout}
             >
               <LogOut className="mr-2 h-4 w-4" />
               Sair
@@ -182,6 +230,14 @@ export function Sidebar() {
           onClick={() => setIsOpen(false)}
         />
       )}
+
+      {/* Access Denied Modal */}
+      <AccessDeniedModal
+        isOpen={accessDeniedModal.isOpen}
+        onClose={() => setAccessDeniedModal({ isOpen: false, moduleName: '' })}
+        moduleName={accessDeniedModal.moduleName}
+        userLevel={user?.level || 1}
+      />
     </>
   )
 }

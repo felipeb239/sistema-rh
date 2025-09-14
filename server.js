@@ -730,7 +730,7 @@ app.get('/api/export/pdf/:payrollId', requireAuth, (req, res) => {
             if (payrollRow.other_benefits > 0) items.push({ cod: '0499', desc: 'OUTROS BENEFÍCIOS', ref: '', proventos: payrollRow.other_benefits, descontos: 0 });
 
             if (payrollRow.health_insurance > 0) items.push({ cod: '3405', desc: 'PLANO DE SAÚDE TITULAR', ref: '', proventos: 0, descontos: payrollRow.health_insurance });
-            if (payrollRow.inss_discount > 0) items.push({ cod: '2801', desc: 'INSS', ref: '11,67', proventos: 0, descontos: payrollRow.inss_discount });
+            if (payrollRow.inss_discount > 0) items.push({ cod: '2801', desc: 'INSS', ref: '', proventos: 0, descontos: payrollRow.inss_discount });
             if (payrollRow.irrf_discount > 0) items.push({ cod: '2804', desc: 'IRRF', ref: '27,50', proventos: 0, descontos: payrollRow.irrf_discount });
             if (payrollRow.other_discounts > 0) items.push({ cod: '2899', desc: 'OUTROS DESCONTOS', ref: '', proventos: 0, descontos: payrollRow.other_discounts });
 
@@ -967,7 +967,7 @@ app.get('/api/export/pdf/batch', requireAuth, (req, res) => {
                 if (row.transport_allowance > 0) items.push({ cod: '0451', desc: 'VALE TRANSPORTE', ref: '', prov: row.transport_allowance, descv: 0 });
                 if (row.other_benefits > 0) items.push({ cod: '0499', desc: 'OUTROS BENEFÍCIOS', ref: '', prov: row.other_benefits, descv: 0 });
                 if (row.health_insurance > 0) items.push({ cod: '3405', desc: 'PLANO DE SAÚDE TITULAR', ref: '', prov: 0, descv: row.health_insurance });
-                if (row.inss_discount > 0) items.push({ cod: '2801', desc: 'INSS', ref: '11,67', prov: 0, descv: row.inss_discount });
+                if (row.inss_discount > 0) items.push({ cod: '2801', desc: 'INSS', ref: '', prov: 0, descv: row.inss_discount });
                 if (row.irrf_discount > 0) items.push({ cod: '2804', desc: 'IRRF', ref: '27,50', prov: 0, descv: row.irrf_discount });
                 if (row.other_discounts > 0) items.push({ cod: '2899', desc: 'OUTROS DESCONTOS', ref: '', prov: 0, descv: row.other_discounts });
                 while (items.length < 6) items.push({});

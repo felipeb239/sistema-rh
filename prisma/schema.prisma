@@ -8,56 +8,60 @@ datasource db {
 }
 
 model User {
-  id        String   @id @default(cuid())
-  username  String   @unique
-  password  String
-  name      String?
-  email     String?
-  role      String   @default("user")
-  status    String   @default("active")
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id          String           @id @default(cuid())
+  username    String           @unique
+  password    String
+  name        String?
+  email       String?
+  role        String           @default("user")
+  status      String           @default("active")
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+  level       Int              @default(1)
+  permissions UserPermission[]
 
   @@map("users")
 }
 
 model Employee {
-  id             String          @id @default(cuid())
-  name           String
-  cpf            String?
-  position       String?
-  department     String?
-  hireDate       DateTime?       @map("hire_date")
-  salary         Decimal?        @db.Decimal(10, 2)
-  status         String          @default("active")
-  createdAt      DateTime        @default(now()) @map("created_at")
-  updatedAt      DateTime        @updatedAt @map("updated_at")
-  payrolls       Payroll[]
-  receipts       Receipt[]
+  id              String           @id @default(cuid())
+  name            String
+  cpf             String?
+  position        String?
+  department      String?
+  hireDate        DateTime?        @map("hire_date")
+  salary          Decimal?         @db.Decimal(10, 2)
+  status          String           @default("active")
+  createdAt       DateTime         @default(now()) @map("created_at")
+  updatedAt       DateTime         @updatedAt @map("updated_at")
   employeeRubrics EmployeeRubric[]
+  payrolls        Payroll[]
+  receipts        Receipt[]
 
   @@map("employees")
 }
 
 model Payroll {
-  id                      String   @id @default(cuid())
-  employeeId              String   @map("employee_id")
-  month                   Int
-  year                    Int
-  baseSalary              Decimal  @map("base_salary") @db.Decimal(10, 2)
-  inssDiscount            Decimal  @default(0) @map("inss_discount") @db.Decimal(10, 2)
-  irrfDiscount            Decimal  @default(0) @map("irrf_discount") @db.Decimal(10, 2)
-  healthInsurance         Decimal  @default(0) @map("health_insurance") @db.Decimal(10, 2)
-  dentalInsurance         Decimal  @default(0) @map("dental_insurance") @db.Decimal(10, 2)
-  customDiscount          Decimal  @default(0) @map("custom_discount") @db.Decimal(10, 2)
-  customDiscountDescription String? @map("custom_discount_description")
-  otherDiscounts          Decimal  @default(0) @map("other_discounts") @db.Decimal(10, 2)
-  grossSalary             Decimal  @map("gross_salary") @db.Decimal(10, 2)
-  netSalary               Decimal  @map("net_salary") @db.Decimal(10, 2)
-  fgtsAmount              Decimal  @default(0) @map("fgts_amount") @db.Decimal(10, 2)
-  createdAt               DateTime @default(now()) @map("created_at")
-  updatedAt               DateTime @updatedAt @map("updated_at")
-  employee                Employee @relation(fields: [employeeId], references: [id])
+  id                        String   @id @default(cuid())
+  employeeId                String   @map("employee_id")
+  month                     Int
+  year                      Int
+  baseSalary                Decimal  @map("base_salary") @db.Decimal(10, 2)
+  inssDiscount              Decimal  @default(0) @map("inss_discount") @db.Decimal(10, 2)
+  irrfDiscount              Decimal  @default(0) @map("irrf_discount") @db.Decimal(10, 2)
+  healthInsurance           Decimal  @default(0) @map("health_insurance") @db.Decimal(10, 2)
+  otherDiscounts            Decimal  @default(0) @map("other_discounts") @db.Decimal(10, 2)
+  grossSalary               Decimal  @map("gross_salary") @db.Decimal(10, 2)
+  netSalary                 Decimal  @map("net_salary") @db.Decimal(10, 2)
+  createdAt                 DateTime @default(now()) @map("created_at")
+  updatedAt                 DateTime @updatedAt @map("updated_at")
+  customDiscount            Decimal  @default(0) @map("custom_discount") @db.Decimal(10, 2)
+  customDiscountDescription String?  @map("custom_discount_description")
+  dentalInsurance           Decimal  @default(0) @map("dental_insurance") @db.Decimal(10, 2)
+  fgtsAmount                Decimal  @default(0) @map("fgts_amount") @db.Decimal(10, 2)
+  receiptBenefits           Decimal  @default(0) @map("receipt_benefits") @db.Decimal(10, 2)
+  receiptDiscounts          Decimal  @default(0) @map("receipt_discounts") @db.Decimal(10, 2)
+  employee                  Employee @relation(fields: [employeeId], references: [id])
 
   @@unique([employeeId, month, year], name: "employeeId_month_year")
   @@map("payrolls")
@@ -93,17 +97,17 @@ model ReceiptType {
 }
 
 model Receipt {
-  id         String     @id @default(cuid())
-  employeeId String     @map("employee_id")
-  typeId     String     @map("type_id")
+  id         String      @id @default(cuid())
+  employeeId String      @map("employee_id")
+  typeId     String      @map("type_id")
   month      Int
   year       Int
-  dailyValue Decimal    @map("daily_value") @db.Decimal(10, 2)
+  dailyValue Decimal     @map("daily_value") @db.Decimal(10, 2)
   days       Int
-  value      Decimal    @db.Decimal(10, 2)
-  createdAt  DateTime   @default(now()) @map("created_at")
-  updatedAt  DateTime   @updatedAt @map("updated_at")
-  employee   Employee   @relation(fields: [employeeId], references: [id])
+  value      Decimal     @db.Decimal(10, 2)
+  createdAt  DateTime    @default(now()) @map("created_at")
+  updatedAt  DateTime    @updatedAt @map("updated_at")
+  employee   Employee    @relation(fields: [employeeId], references: [id])
   type       ReceiptType @relation(fields: [typeId], references: [id])
 
   @@map("receipts")
@@ -126,34 +130,96 @@ model Position {
 }
 
 model PayrollRubric {
-  id             String          @id @default(cuid())
-  name           String
-  description    String?
-  type           String          // 'discount' or 'benefit'
-  code           String?         // Código da rubrica (ex: 2801, 3405)
-  isActive       Boolean         @default(true) @map("is_active")
-  createdAt      DateTime        @default(now()) @map("created_at")
-  updatedAt      DateTime        @updatedAt @map("updated_at")
+  id              String           @id @default(cuid())
+  name            String
+  description     String?
+  type            String
+  code            String?
+  isActive        Boolean          @default(true) @map("is_active")
+  createdAt       DateTime         @default(now()) @map("created_at")
+  updatedAt       DateTime         @updatedAt @map("updated_at")
   employeeRubrics EmployeeRubric[]
 
   @@map("payroll_rubrics")
 }
 
 model EmployeeRubric {
-  id              String        @id @default(cuid())
-  employeeId      String        @map("employee_id")
-  rubricId        String        @map("rubric_id")
-  customName      String?       @map("custom_name")
-  customValue     Decimal?      @map("custom_value") @db.Decimal(10, 2)
-  customPercentage Decimal?     @map("custom_percentage") @db.Decimal(5, 4)
-  isActive        Boolean       @default(true) @map("is_active")
-  startDate       DateTime?     @map("start_date")
-  endDate         DateTime?     @map("end_date")
-  createdAt       DateTime      @default(now()) @map("created_at")
-  updatedAt       DateTime      @updatedAt @map("updated_at")
-  employee        Employee      @relation(fields: [employeeId], references: [id], onDelete: Cascade)
-  rubric          PayrollRubric @relation(fields: [rubricId], references: [id], onDelete: Cascade)
+  id               String        @id @default(cuid())
+  employeeId       String        @map("employee_id")
+  rubricId         String        @map("rubric_id")
+  customName       String?       @map("custom_name")
+  customValue      Decimal?      @map("custom_value") @db.Decimal(10, 2)
+  customPercentage Decimal?      @map("custom_percentage") @db.Decimal(5, 4)
+  isActive         Boolean       @default(true) @map("is_active")
+  startDate        DateTime?     @map("start_date")
+  endDate          DateTime?     @map("end_date")
+  createdAt        DateTime      @default(now()) @map("created_at")
+  updatedAt        DateTime      @updatedAt @map("updated_at")
+  employee         Employee      @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  rubric           PayrollRubric @relation(fields: [rubricId], references: [id], onDelete: Cascade)
 
   @@unique([employeeId, rubricId], name: "employee_rubric_unique")
   @@map("employee_rubrics")
+}
+
+model Permission {
+  id              String           @id @default(cuid())
+  name            String           @unique
+  description     String?
+  module          String
+  action          String
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  userPermissions UserPermission[]
+
+  @@map("permissions")
+}
+
+model UserPermission {
+  id           String     @id @default(cuid())
+  userId       String     @map("user_id")
+  permissionId String     @map("permission_id")
+  granted      Boolean    @default(true)
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+  permission   Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+  user         User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, permissionId], name: "user_permission_unique")
+  @@map("user_permissions")
+}
+
+model PhoneDirectory {
+  id         String   @id @default(cuid())
+  name       String
+  phone      String
+  department String?
+  position   String?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@map("phone_directory")
+}
+
+model CustomerContact {
+  id          String   @id @default(cuid())
+  companyName String   @map("company_name")
+  contactName String   @map("contact_name")
+  phones      String[]
+  emails      String[]
+  notes       String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("customer_contacts")
+}
+
+model PasswordResetToken {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  token     String   @unique
+  expiresAt DateTime @map("expires_at")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@map("password_reset_tokens")
 }

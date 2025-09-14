@@ -17,11 +17,13 @@ import {
   TrendingDown,
   CheckCircle,
   AlertCircle,
-  Receipt
+  Receipt,
+  Edit3
 } from 'lucide-react'
 import { formatCurrency, formatDate } from '@/lib/utils'
 import { NewPayrollModal } from './new-payroll-modal'
 import { DeletePayrollModal } from './delete-payroll-modal'
+import { LoanInstallmentsManager } from './loan-installments-manager'
 
 interface PayrollSummary {
   id: string
@@ -31,6 +33,8 @@ interface PayrollSummary {
   baseSalary: number
   grossSalary: number
   netSalary: number
+  inssDiscount: number
+  irrfDiscount: number
   employee: {
     id: string
     name: string
@@ -50,6 +54,11 @@ interface FolhaTotals {
 export function FolhaPagamentoContent() {
   const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth() + 1)
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear())
+  const [editingInss, setEditingInss] = useState<string | null>(null)
+  const [newInssValue, setNewInssValue] = useState('')
+  const [editingIrrf, setEditingIrrf] = useState<string | null>(null)
+  const [newIrrfValue, setNewIrrfValue] = useState('')
+  const [activeTab, setActiveTab] = useState<'payroll' | 'loans'>('payroll')
 
   // Buscar dados da folha
   const { data: folhaData, isLoading, refetch } = useQuery({
@@ -60,6 +69,72 @@ export function FolhaPagamentoContent() {
       return response.json()
     }
   })
+
+  // Função para atualizar INSS
+  const updateInss = async (payrollId: string, newInssValue: string) => {
+    try {
+      const response = await fetch(`/api/payroll/${payrollId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          inssDiscount: parseFloat(newInssValue) || 0
+        }),
+      })
+
+      if (!response.ok) {
+        throw new Error('Erro ao atualizar INSS')
+      }
+
+      // Recarregar dados
+      refetch()
+      setEditingInss(null)
+      setNewInssValue('')
+    } catch (error) {
+      console.error('Erro ao atualizar INSS:', error)
+      alert('Erro ao atualizar INSS. Tente novamente.')
+    }
+  }
+
+  // Função para atualizar IRRF
+  const updateIrrf = async (payrollId: string, newIrrfValue: string) => {
+    try {
+      const response = await fetch(`/api/payroll/${payrollId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          irrfDiscount: parseFloat(newIrrfValue) || 0
+        }),
+      })
+
+      if (!response.ok) {
+        throw new Error('Erro ao atualizar IRRF')
+      }
+
+      // Recarregar dados
+      refetch()
+      setEditingIrrf(null)
+      setNewIrrfValue('')
+    } catch (error) {
+      console.error('Erro ao atualizar IRRF:', error)
+      alert('Erro ao atualizar IRRF. Tente novamente.')
+    }
+  }
+
+  // Função para iniciar edição do INSS
+  const startEditingInss = (payrollId: string, currentValue: number) => {
+    setEditingInss(payrollId)
+    setNewInssValue(currentValue.toString())
+  }
+
+  // Função para iniciar edição do IRRF
+  const startEditingIrrf = (payrollId: string, currentValue: number) => {
+    setEditingIrrf(payrollId)
+    setNewIrrfValue(currentValue.toString())
+  }
 
   // Buscar dados do dashboard
   const { data: dashboardData } = useQuery({
@@ -79,6 +154,17 @@ export function FolhaPagamentoContent() {
     } catch (error) {
       console.error('Erro ao exportar folha:', error)
       alert('Erro ao exportar folha de pagamento')
+    }
+  }
+
+  const handleExportBatchPayroll = async () => {
+    try {
+      // Abrir em nova aba para impressão/PDF dos holerites em massa
+      const url = `/api/export/batch-payroll?month=${selectedMonth}&year=${selectedYear}`
+      window.open(url, '_blank')
+    } catch (error) {
+      console.error('Erro ao exportar holerites em massa:', error)
+      alert('Erro ao exportar holerites em massa')
     }
   }
 
@@ -251,7 +337,34 @@ export function FolhaPagamentoContent() {
         </CardContent>
       </Card>
 
-      {/* Resumo da Folha */}
+      {/* Abas */}
+      <div className="flex space-x-1 bg-muted p-1 rounded-lg">
+        <button
+          className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-colors ${
+            activeTab === 'payroll'
+              ? 'bg-background text-foreground shadow-sm'
+              : 'text-muted-foreground hover:text-foreground'
+          }`}
+          onClick={() => setActiveTab('payroll')}
+        >
+          📋 Folha de Pagamento
+        </button>
+        <button
+          className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-colors ${
+            activeTab === 'loans'
+              ? 'bg-background text-foreground shadow-sm'
+              : 'text-muted-foreground hover:text-foreground'
+          }`}
+          onClick={() => setActiveTab('loans')}
+        >
+          💰 Empréstimos
+        </button>
+      </div>
+
+      {/* Conteúdo das Abas */}
+      {activeTab === 'payroll' && (
+        <>
+          {/* Resumo da Folha */}
       {folhaData && (
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
           <Card>
@@ -329,6 +442,16 @@ export function FolhaPagamentoContent() {
               <Download className="h-4 w-4" />
               Exportar Folha Completa (PDF)
             </Button>
+            {folhaData && folhaData.totals.count > 0 && (
+              <Button 
+                onClick={handleExportBatchPayroll} 
+                className="flex items-center gap-2"
+                variant="outline"
+              >
+                <FileText className="h-4 w-4" />
+                Exportar Holerites em Massa
+              </Button>
+            )}
             <Button variant="outline" onClick={() => refetch()} className="flex items-center gap-2">
               <FileText className="h-4 w-4" />
               Atualizar Dados
@@ -383,24 +506,122 @@ export function FolhaPagamentoContent() {
                         </div>
                       </div>
                     </div>
-                    <div className="text-right space-y-1">
-                      <div className="text-sm">
-                        <span className="text-muted-foreground">Bruto: </span>
-                        <span className="font-medium text-green-600">
-                          {formatCurrency(payroll.grossSalary)}
-                        </span>
+                    <div className="flex items-center space-x-4">
+                      <div className="text-right space-y-1">
+                        <div className="text-sm">
+                          <span className="text-muted-foreground">Bruto: </span>
+                          <span className="font-medium text-green-600">
+                            {formatCurrency(payroll.grossSalary)}
+                          </span>
+                        </div>
+                        <div className="text-sm">
+                          <span className="text-muted-foreground">Descontos: </span>
+                          <span className="font-medium text-red-600">
+                            {formatCurrency(totalDiscounts)}
+                          </span>
+                        </div>
+                        <div className="text-sm font-semibold">
+                          <span className="text-muted-foreground">Líquido: </span>
+                          <span className="font-medium text-blue-600">
+                            {formatCurrency(payroll.netSalary)}
+                          </span>
+                        </div>
                       </div>
-                      <div className="text-sm">
-                        <span className="text-muted-foreground">Descontos: </span>
-                        <span className="font-medium text-red-600">
-                          {formatCurrency(totalDiscounts)}
-                        </span>
+                      
+                      {/* Botão de edição do INSS */}
+                      <div className="flex flex-col items-center space-y-2">
+                        <div className="text-xs text-center">
+                          <div className="text-muted-foreground mb-1">INSS</div>
+                          {editingInss === payroll.id ? (
+                            <div className="flex items-center space-x-1">
+                              <Input
+                                type="number"
+                                step="0.01"
+                                value={newInssValue}
+                                onChange={(e) => setNewInssValue(e.target.value)}
+                                className="w-16 h-6 text-xs"
+                                placeholder="0,00"
+                              />
+                              <Button
+                                size="sm"
+                                onClick={() => updateInss(payroll.id, newInssValue)}
+                                className="h-6 px-2 text-xs"
+                              >
+                                ✓
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => setEditingInss(null)}
+                                className="h-6 px-2 text-xs"
+                              >
+                                ✗
+                              </Button>
+                            </div>
+                          ) : (
+                            <div className="flex items-center space-x-1">
+                              <span className="text-xs font-medium">
+                                {formatCurrency(payroll.inssDiscount)}
+                              </span>
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                onClick={() => startEditingInss(payroll.id, payroll.inssDiscount)}
+                                className="h-5 w-5 p-0 text-xs"
+                              >
+                                <Edit3 className="h-3 w-3" />
+                              </Button>
+                            </div>
+                          )}
+                        </div>
                       </div>
-                      <div className="text-sm font-semibold">
-                        <span className="text-muted-foreground">Líquido: </span>
-                        <span className="font-medium text-blue-600">
-                          {formatCurrency(payroll.netSalary)}
-                        </span>
+
+                      {/* Botão de edição do IRRF */}
+                      <div className="flex flex-col items-center space-y-2">
+                        <div className="text-xs text-center">
+                          <div className="text-muted-foreground mb-1">IRRF</div>
+                          {editingIrrf === payroll.id ? (
+                            <div className="flex items-center space-x-1">
+                              <Input
+                                type="number"
+                                step="0.01"
+                                value={newIrrfValue}
+                                onChange={(e) => setNewIrrfValue(e.target.value)}
+                                className="w-16 h-6 text-xs"
+                                placeholder="0,00"
+                              />
+                              <Button
+                                size="sm"
+                                onClick={() => updateIrrf(payroll.id, newIrrfValue)}
+                                className="h-6 px-2 text-xs"
+                              >
+                                ✓
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => setEditingIrrf(null)}
+                                className="h-6 px-2 text-xs"
+                              >
+                                ✗
+                              </Button>
+                            </div>
+                          ) : (
+                            <div className="flex items-center space-x-1">
+                              <span className="text-xs font-medium">
+                                {formatCurrency(payroll.irrfDiscount)}
+                              </span>
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                onClick={() => startEditingIrrf(payroll.id, payroll.irrfDiscount)}
+                                className="h-5 w-5 p-0 text-xs"
+                              >
+                                <Edit3 className="h-3 w-3" />
+                              </Button>
+                            </div>
+                          )}
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -419,6 +640,15 @@ export function FolhaPagamentoContent() {
           )}
         </CardContent>
       </Card>
+        </>
+      )}
+
+      {activeTab === 'loans' && (
+        <LoanInstallmentsManager 
+          selectedMonth={selectedMonth}
+          selectedYear={selectedYear}
+        />
+      )}
     </div>
   )
 }

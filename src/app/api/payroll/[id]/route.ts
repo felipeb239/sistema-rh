@@ -29,24 +29,57 @@ export async function PUT(
       autoCalculateTaxes
     } = body
 
-    // Calcular valores
-    const baseSalaryValue = parseFloat(baseSalary || 0)
-    const inssDiscountValue = parseFloat(inssDiscount || 0)
-    const irrfDiscountValue = parseFloat(irrfDiscount || 0)
-    const healthInsuranceValue = parseFloat(healthInsurance || 0)
-    const dentalInsuranceValue = parseFloat(dentalInsurance || 0)
-    const customDiscountValue = parseFloat(customDiscount || 0)
-    const otherDiscountsValue = parseFloat(otherDiscounts || 0)
-    const fgtsAmountValue = parseFloat(fgtsAmount || 0)
+    // Buscar o holerite atual para manter o grossSalary original
+    const currentPayroll = await prisma.payroll.findUnique({
+      where: { id }
+    })
+
+    if (!currentPayroll) {
+      return NextResponse.json({ error: 'Holerite não encontrado' }, { status: 404 })
+    }
+
+    // Calcular valores - garantir que todos sejam números
+    const baseSalaryValue = parseFloat(baseSalary || currentPayroll.baseSalary.toString())
+    const inssDiscountValue = parseFloat(inssDiscount || 0) || Number(currentPayroll.inssDiscount)
+    const irrfDiscountValue = parseFloat(irrfDiscount || 0) || Number(currentPayroll.irrfDiscount)
+    const healthInsuranceValue = parseFloat(healthInsurance || currentPayroll.healthInsurance.toString())
+    const dentalInsuranceValue = parseFloat(dentalInsurance || currentPayroll.dentalInsurance.toString())
+    const customDiscountValue = parseFloat(customDiscount || currentPayroll.customDiscount.toString())
+    const otherDiscountsValue = parseFloat(otherDiscounts || currentPayroll.otherDiscounts.toString())
+    const fgtsAmountValue = parseFloat(fgtsAmount || currentPayroll.fgtsAmount.toString())
     
-    // Calcular salário bruto
-    const grossSalary = baseSalaryValue
+    // Manter o salário bruto original (que já inclui rubricas e recibos)
+    const grossSalary = Number(currentPayroll.grossSalary)
     
     // Calcular total de descontos
     const totalDiscounts = inssDiscountValue + irrfDiscountValue + healthInsuranceValue + dentalInsuranceValue + customDiscountValue + otherDiscountsValue
     
     // Calcular salário líquido
     const netSalary = grossSalary - totalDiscounts
+    
+    // Validar se o resultado é um número válido
+    if (isNaN(netSalary) || !isFinite(netSalary)) {
+      console.error('❌ Erro no cálculo do salário líquido:', {
+        grossSalary,
+        totalDiscounts,
+        inssDiscountValue,
+        irrfDiscountValue,
+        healthInsuranceValue,
+        dentalInsuranceValue,
+        customDiscountValue,
+        otherDiscountsValue
+      })
+      return NextResponse.json({ error: 'Erro no cálculo do salário líquido' }, { status: 400 })
+    }
+
+    console.log(`🔧 Atualizando holerite ${id}:`)
+    console.log(`   Salário bruto original: R$ ${grossSalary}`)
+    console.log(`   INSS: R$ ${inssDiscountValue} (tipo: ${typeof inssDiscountValue})`)
+    console.log(`   IRRF: R$ ${irrfDiscountValue} (tipo: ${typeof irrfDiscountValue})`)
+    console.log(`   Health Insurance: R$ ${healthInsuranceValue} (tipo: ${typeof healthInsuranceValue})`)
+    console.log(`   Custom Discount: R$ ${customDiscountValue} (tipo: ${typeof customDiscountValue})`)
+    console.log(`   Total descontos: R$ ${totalDiscounts} (tipo: ${typeof totalDiscounts})`)
+    console.log(`   Novo salário líquido: R$ ${netSalary}`)
 
     const payroll = await prisma.payroll.update({
       where: { id },

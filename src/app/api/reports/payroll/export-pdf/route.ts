@@ -47,33 +47,85 @@ export async function GET(request: NextRequest) {
       }
     })
 
+    // Buscar recibos do período para resumo discriminado
+    const receipts = await prisma.receipt.findMany({
+      where: {
+        month: monthNum,
+        year: yearNum
+      },
+      include: {
+        type: true,
+        employee: {
+          select: {
+            name: true
+          }
+        }
+      },
+      orderBy: {
+        type: {
+          name: 'asc'
+        }
+      }
+    })
+
+
     // Buscar configurações da empresa
     const companySettings = await prisma.companySettings.findFirst()
 
-    // Calcular totais
+    // Calcular totais detalhados
     const totals = {
       totalGrossSalary: 0,
       totalNetSalary: 0,
       totalDiscounts: 0,
-      count: payrolls.length
+      totalReceiptBenefits: 0,
+      totalReceiptDiscounts: 0,
+      count: payrolls.length,
+      // Totais detalhados por tipo de desconto
+      totalInss: 0,
+      totalIrrf: 0,
+      totalHealthInsurance: 0,
+      totalDentalInsurance: 0,
+      totalCustomDiscounts: 0,
+      totalOtherDiscounts: 0,
+      // Totais de proventos
+      totalBaseSalary: 0,
+      totalBenefits: 0
     }
 
     payrolls.forEach(payroll => {
       totals.totalGrossSalary += Number(payroll.grossSalary)
       totals.totalNetSalary += Number(payroll.netSalary)
+      totals.totalBaseSalary += Number(payroll.baseSalary)
       
-      const totalDiscounts = Number(payroll.inssDiscount) + 
-                           Number(payroll.irrfDiscount) + 
-                           Number(payroll.healthInsurance) + 
-                           Number(payroll.dentalInsurance) + 
-                           Number(payroll.customDiscount) + 
-                           Number(payroll.otherDiscounts)
+      // Descontos detalhados
+      const inssValue = Number(payroll.inssDiscount)
+      const irrfValue = Number(payroll.irrfDiscount)
+      const healthValue = Number(payroll.healthInsurance)
+      const dentalValue = Number(payroll.dentalInsurance)
+      const customValue = Number(payroll.customDiscount)
+      const otherValue = Number(payroll.otherDiscounts)
       
+      totals.totalInss += inssValue
+      totals.totalIrrf += irrfValue
+      totals.totalHealthInsurance += healthValue
+      totals.totalDentalInsurance += dentalValue
+      totals.totalCustomDiscounts += customValue
+      totals.totalOtherDiscounts += otherValue
+      
+      const totalDiscounts = inssValue + irrfValue + healthValue + dentalValue + customValue + otherValue
       totals.totalDiscounts += totalDiscounts
+      
+      // Incluir recibos nos totais
+      if (payroll.receiptBenefits) {
+        totals.totalReceiptBenefits += Number(payroll.receiptBenefits)
+      }
+      if (payroll.receiptDiscounts) {
+        totals.totalReceiptDiscounts += Number(payroll.receiptDiscounts)
+      }
     })
 
     // Gerar HTML otimizado para conversão em PDF
-    const htmlContent = generatePDFHTML(payrolls, totals, companySettings, monthNum, yearNum)
+    const htmlContent = generatePDFHTML(payrolls, totals, companySettings, monthNum, yearNum, receipts)
 
     return new NextResponse(htmlContent, {
       headers: {
@@ -91,7 +143,7 @@ export async function GET(request: NextRequest) {
   }
 }
 
-function generatePDFHTML(payrolls: any[], totals: any, companySettings: any, month: number, year: number): string {
+function generatePDFHTML(payrolls: any[], totals: any, companySettings: any, month: number, year: number, receipts: any[]): string {
   const months = [
     'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
     'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'
@@ -107,7 +159,26 @@ function generatePDFHTML(payrolls: any[], totals: any, companySettings: any, mon
     }).format(value)
   }
 
-  return `<!DOCTYPE html>
+  // Calcular resumo dos recibos por tipo
+  const receiptSummary = receipts.reduce((acc: any, receipt) => {
+    const typeName = receipt.type.name
+    if (!acc[typeName]) {
+      acc[typeName] = {
+        count: 0,
+        totalValue: 0,
+        type: receipt.type
+      }
+    }
+    acc[typeName].count += 1
+    acc[typeName].totalValue += Number(receipt.value)
+    return acc
+  }, {})
+
+  // Converter para array e ordenar por valor total
+  const receiptSummaryArray = Object.values(receiptSummary).sort((a: any, b: any) => b.totalValue - a.totalValue)
+  
+
+  const htmlContent = `<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
@@ -279,6 +350,213 @@ function generatePDFHTML(payrolls: any[], totals: any, companySettings: any, mon
             background: #0056b3;
         }
         
+        /* Cards de Descontos */
+        .deductions-summary-section {
+            background: linear-gradient(135deg, #fff5f5 0%, #fed7d7 100%);
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            border: 2px solid #fc8181;
+        }
+        
+        .deductions-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 15px;
+        }
+        
+        .deduction-card {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            border: 2px solid #e2e8f0;
+            text-align: center;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            transition: transform 0.2s;
+        }
+        
+        .deduction-card:hover {
+            transform: translateY(-2px);
+        }
+        
+        .deduction-card.inss-card {
+            border-color: #f56565;
+            background: linear-gradient(135deg, #fff5f5 0%, #fed7d7 100%);
+        }
+        
+        .deduction-card.irrf-card {
+            border-color: #ed8936;
+            background: linear-gradient(135deg, #fffaf0 0%, #feebc8 100%);
+        }
+        
+        .deduction-card.health-card {
+            border-color: #4299e1;
+            background: linear-gradient(135deg, #ebf8ff 0%, #bee3f8 100%);
+        }
+        
+        .deduction-card.dental-card {
+            border-color: #48bb78;
+            background: linear-gradient(135deg, #f0fff4 0%, #c6f6d5 100%);
+        }
+        
+        .deduction-card.custom-card {
+            border-color: #9f7aea;
+            background: linear-gradient(135deg, #faf5ff 0%, #e9d8fd 100%);
+        }
+        
+        .deduction-card.total-deductions-card {
+            border-color: #e53e3e;
+            background: linear-gradient(135deg, #fed7d7 0%, #fc8181 100%);
+            color: white;
+        }
+        
+        .deduction-icon {
+            font-size: 24px;
+            margin-bottom: 8px;
+        }
+        
+        .deduction-type {
+            font-weight: bold;
+            color: #2d3748;
+            margin-bottom: 5px;
+            font-size: 11px;
+        }
+        
+        .deduction-count {
+            color: #718096;
+            font-size: 9px;
+            margin-bottom: 8px;
+        }
+        
+        .deduction-total {
+            font-weight: bold;
+            font-size: 13px;
+            color: #e53e3e;
+        }
+        
+        .deduction-card.total-deductions-card .deduction-type,
+        .deduction-card.total-deductions-card .deduction-count,
+        .deduction-card.total-deductions-card .deduction-total {
+            color: white;
+        }
+        
+        /* Cards de Proventos */
+        .earnings-summary-section {
+            background: linear-gradient(135deg, #f0fff4 0%, #c6f6d5 100%);
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            border: 2px solid #68d391;
+        }
+        
+        .earnings-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+        }
+        
+        .earning-card {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            border: 2px solid #e2e8f0;
+            text-align: center;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            transition: transform 0.2s;
+        }
+        
+        .earning-card:hover {
+            transform: translateY(-2px);
+        }
+        
+        .earning-card.base-salary-card {
+            border-color: #48bb78;
+            background: linear-gradient(135deg, #f0fff4 0%, #c6f6d5 100%);
+        }
+        
+        .earning-card.benefits-card {
+            border-color: #38a169;
+            background: linear-gradient(135deg, #e6fffa 0%, #b2f5ea 100%);
+        }
+        
+        .earning-card.total-earnings-card {
+            border-color: #2f855a;
+            background: linear-gradient(135deg, #c6f6d5 0%, #68d391 100%);
+            color: white;
+        }
+        
+        .earning-icon {
+            font-size: 24px;
+            margin-bottom: 8px;
+        }
+        
+        .earning-type {
+            font-weight: bold;
+            color: #2d3748;
+            margin-bottom: 5px;
+            font-size: 11px;
+        }
+        
+        .earning-count {
+            color: #718096;
+            font-size: 9px;
+            margin-bottom: 8px;
+        }
+        
+        .earning-total {
+            font-weight: bold;
+            font-size: 13px;
+            color: #38a169;
+        }
+        
+        .earning-card.total-earnings-card .earning-type,
+        .earning-card.total-earnings-card .earning-count,
+        .earning-card.total-earnings-card .earning-total {
+            color: white;
+        }
+        
+        /* Cards de Recibos (mantido) */
+        .receipts-summary-section {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            border: 1px solid #e9ecef;
+        }
+        
+        .receipts-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+        }
+        
+        .receipt-summary-item {
+            background: white;
+            padding: 15px;
+            border-radius: 6px;
+            border: 1px solid #dee2e6;
+            text-align: center;
+        }
+        
+        .receipt-type {
+            font-weight: bold;
+            color: #2c3e50;
+            margin-bottom: 8px;
+            font-size: 12px;
+        }
+        
+        .receipt-count {
+            color: #6c757d;
+            font-size: 10px;
+            margin-bottom: 5px;
+        }
+        
+        .receipt-total {
+            font-weight: bold;
+            color: #27ae60;
+            font-size: 14px;
+        }
+        
         @media print {
             .pdf-button {
                 display: none;
@@ -329,8 +607,16 @@ function generatePDFHTML(payrolls: any[], totals: any, companySettings: any, mon
                 <div class="value currency">${formatCurrency(totals.totalGrossSalary)}</div>
             </div>
             <div class="summary-item">
+                <div class="label">Recibos (Proventos)</div>
+                <div class="value currency">${formatCurrency(totals.totalReceiptBenefits)}</div>
+            </div>
+            <div class="summary-item">
                 <div class="label">Total de Descontos</div>
                 <div class="value currency">${formatCurrency(totals.totalDiscounts)}</div>
+            </div>
+            <div class="summary-item">
+                <div class="label">Recibos (Descontos)</div>
+                <div class="value currency">${formatCurrency(totals.totalReceiptDiscounts)}</div>
             </div>
             <div class="summary-item total">
                 <div class="label">Salário Líquido Total</div>
@@ -342,12 +628,14 @@ function generatePDFHTML(payrolls: any[], totals: any, companySettings: any, mon
         <table>
             <thead>
                 <tr>
-                    <th style="width: 5%;">#</th>
-                    <th style="width: 35%;">Funcionário</th>
-                    <th style="width: 20%;">Cargo</th>
-                    <th style="width: 15%;">Salário Bruto</th>
-                    <th style="width: 15%;">Descontos</th>
-                    <th style="width: 15%;">Salário Líquido</th>
+                    <th style="width: 4%;">#</th>
+                    <th style="width: 25%;">Funcionário</th>
+                    <th style="width: 15%;">Cargo</th>
+                    <th style="width: 12%;">Salário Base</th>
+                    <th style="width: 12%;">Recibos (+)</th>
+                    <th style="width: 12%;">Descontos</th>
+                    <th style="width: 10%;">Recibos (-)</th>
+                    <th style="width: 10%;">Líquido</th>
                 </tr>
             </thead>
             <tbody>
@@ -359,13 +647,18 @@ function generatePDFHTML(payrolls: any[], totals: any, companySettings: any, mon
                                        Number(payroll.customDiscount) + 
                                        Number(payroll.otherDiscounts)
                   
+                  const receiptBenefits = Number(payroll.receiptBenefits || 0)
+                  const receiptDiscounts = Number(payroll.receiptDiscounts || 0)
+                  
                   return `
                     <tr>
                         <td class="text-center">${index + 1}</td>
                         <td>${payroll.employee.name}</td>
                         <td>${payroll.employee.position || '-'}</td>
-                        <td class="text-right currency">${formatCurrency(Number(payroll.grossSalary))}</td>
+                        <td class="text-right currency">${formatCurrency(Number(payroll.baseSalary))}</td>
+                        <td class="text-right currency">${receiptBenefits > 0 ? formatCurrency(receiptBenefits) : '-'}</td>
                         <td class="text-right currency">${formatCurrency(totalDiscounts)}</td>
+                        <td class="text-right currency">${receiptDiscounts > 0 ? formatCurrency(receiptDiscounts) : '-'}</td>
                         <td class="text-right currency">${formatCurrency(Number(payroll.netSalary))}</td>
                     </tr>
                   `
@@ -385,14 +678,116 @@ function generatePDFHTML(payrolls: any[], totals: any, companySettings: any, mon
                     <div class="value currency">${formatCurrency(totals.totalGrossSalary)}</div>
                 </div>
                 <div class="total-item">
+                    <div class="label">Recibos (+)</div>
+                    <div class="value currency">${formatCurrency(totals.totalReceiptBenefits)}</div>
+                </div>
+                <div class="total-item">
                     <div class="label">Total Descontos</div>
                     <div class="value currency">${formatCurrency(totals.totalDiscounts)}</div>
+                </div>
+                <div class="total-item">
+                    <div class="label">Recibos (-)</div>
+                    <div class="value currency">${formatCurrency(totals.totalReceiptDiscounts)}</div>
                 </div>
                 <div class="total-item main">
                     <div class="label">Salário Líquido</div>
                     <div class="value currency">${formatCurrency(totals.totalNetSalary)}</div>
                 </div>
             </div>
+        </div>
+        
+        <!-- Cards de Descontos Detalhados -->
+        <div class="deductions-summary-section">
+            <h3 style="color: #e74c3c; margin-bottom: 15px; font-size: 14px; border-bottom: 2px solid #e74c3c; padding-bottom: 5px;">
+                💸 RESUMO DETALHADO DOS DESCONTOS
+            </h3>
+            <div class="deductions-grid">
+                <div class="deduction-card inss-card">
+                    <div class="deduction-icon">🏛️</div>
+                    <div class="deduction-type">INSS</div>
+                    <div class="deduction-count">${totals.count} funcionários</div>
+                    <div class="deduction-total">${formatCurrency(totals.totalInss)}</div>
+                </div>
+                <div class="deduction-card irrf-card">
+                    <div class="deduction-icon">📊</div>
+                    <div class="deduction-type">IRRF</div>
+                    <div class="deduction-count">${totals.count} funcionários</div>
+                    <div class="deduction-total">${formatCurrency(totals.totalIrrf)}</div>
+                </div>
+                <div class="deduction-card health-card">
+                    <div class="deduction-icon">🏥</div>
+                    <div class="deduction-type">PLANO DE SAÚDE</div>
+                    <div class="deduction-count">${totals.count} funcionários</div>
+                    <div class="deduction-total">${formatCurrency(totals.totalHealthInsurance)}</div>
+                </div>
+                <div class="deduction-card dental-card">
+                    <div class="deduction-icon">🦷</div>
+                    <div class="deduction-type">PLANO ODONTOLÓGICO</div>
+                    <div class="deduction-count">${totals.count} funcionários</div>
+                    <div class="deduction-total">${formatCurrency(totals.totalDentalInsurance)}</div>
+                </div>
+                <div class="deduction-card custom-card">
+                    <div class="deduction-icon">📝</div>
+                    <div class="deduction-type">OUTROS DESCONTOS</div>
+                    <div class="deduction-count">${totals.count} funcionários</div>
+                    <div class="deduction-total">${formatCurrency(totals.totalCustomDiscounts + totals.totalOtherDiscounts)}</div>
+                </div>
+                <div class="deduction-card total-deductions-card">
+                    <div class="deduction-icon">💼</div>
+                    <div class="deduction-type">TOTAL DESCONTOS</div>
+                    <div class="deduction-count">${totals.count} funcionários</div>
+                    <div class="deduction-total">${formatCurrency(totals.totalDiscounts)}</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Cards de Proventos Detalhados -->
+        <div class="earnings-summary-section">
+            <h3 style="color: #27ae60; margin-bottom: 15px; font-size: 14px; border-bottom: 2px solid #27ae60; padding-bottom: 5px;">
+                💰 RESUMO DETALHADO DOS PROVENTOS
+            </h3>
+            <div class="earnings-grid">
+                <div class="earning-card base-salary-card">
+                    <div class="earning-icon">💵</div>
+                    <div class="earning-type">SALÁRIO BASE</div>
+                    <div class="earning-count">${totals.count} funcionários</div>
+                    <div class="earning-total">${formatCurrency(totals.totalBaseSalary)}</div>
+                </div>
+                <div class="earning-card benefits-card">
+                    <div class="earning-icon">🎁</div>
+                    <div class="earning-type">BENEFÍCIOS</div>
+                    <div class="earning-count">${totals.count} funcionários</div>
+                    <div class="earning-total">${formatCurrency(totals.totalReceiptBenefits)}</div>
+                </div>
+                <div class="earning-card total-earnings-card">
+                    <div class="earning-icon">📈</div>
+                    <div class="earning-type">TOTAL PROVENTOS</div>
+                    <div class="earning-count">${totals.count} funcionários</div>
+                    <div class="earning-total">${formatCurrency(totals.totalGrossSalary)}</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Resumo Discriminado dos Recibos -->
+        <div class="receipts-summary-section">
+            <h3 style="color: #2c3e50; margin-bottom: 15px; font-size: 14px; border-bottom: 1px solid #ddd; padding-bottom: 5px;">
+                📋 RESUMO DISCRIMINADO DOS RECIBOS
+            </h3>
+            ${receiptSummaryArray.length > 0 ? `
+            <div class="receipts-grid">
+                ${receiptSummaryArray.map((receipt: any) => `
+                    <div class="receipt-summary-item">
+                        <div class="receipt-type">${receipt.type.name}</div>
+                        <div class="receipt-count">${receipt.count} recibo(s)</div>
+                        <div class="receipt-total">${formatCurrency(receipt.totalValue)}</div>
+                    </div>
+                `).join('')}
+            </div>
+            ` : `
+            <div style="text-align: center; color: #666; padding: 20px;">
+                Nenhum recibo emitido neste período.
+            </div>
+            `}
         </div>
     </div>
 
@@ -486,4 +881,7 @@ function generatePDFHTML(payrolls: any[], totals: any, companySettings: any, mon
     </script>
 </body>
 </html>`
+
+  
+  return htmlContent
 }

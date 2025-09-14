@@ -9,6 +9,9 @@ Sistema completo de gestão de folha de pagamento desenvolvido com Next.js 14, T
 - **Middleware de Proteção**: Rotas protegidas automaticamente
 - **Sessões Seguras**: Gerenciamento de sessões com JWT
 - **Controle de Acesso**: Diferentes níveis de usuário
+- **Recuperação de Senha**: Sistema completo com tokens seguros
+- **Validação de Tokens**: Verificação de expiração e segurança
+- **Banco de Tokens**: Armazenamento seguro de tokens de reset
 
 ### 👥 Gestão de Funcionários
 - **CRUD Completo**: Cadastro, edição, visualização e exclusão
@@ -27,6 +30,8 @@ Sistema completo de gestão de folha de pagamento desenvolvido com Next.js 14, T
 - **Plano de Saúde e Odontológico**: Gestão de benefícios
 - **Exportação Individual**: PDF e CSV para cada holerite
 - **Validação de Duplicatas**: Prevenção de holerites duplicados por funcionário/mês/ano
+- **Sistema de Recuperação de Senha**: Reset de senha via email com tokens seguros
+- **Interface Limpa**: Sem valores de referência desnecessários (ex: INSS)
 
 ### 📊 Folha de Pagamento (Gestão Consolidada)
 - **Dashboard Executivo**: Visão geral com métricas principais
@@ -36,6 +41,10 @@ Sistema completo de gestão de folha de pagamento desenvolvido com Next.js 14, T
 - **Gestão de Status**: Controle de holerites emitidos
 - **Exclusão em Lote**: Remoção de holerites por período
 - **Interface Intuitiva**: Fluxo simplificado para RH
+- **Relatórios Detalhados**: Cards destacados com descontos e proventos separados
+- **Cards de Descontos**: INSS, IRRF, Planos de Saúde/Odontológico, Empréstimos
+- **Cards de Proventos**: Salário Base, Benefícios e Totais
+- **Layout Profissional**: Tabelas com alinhamento proporcional e fonte consistente
 
 ### 🧮 Gestão de Rubricas
 - **Rubricas Globais**: Criação e gestão de rubricas padrão
@@ -85,10 +94,11 @@ Sistema completo de gestão de folha de pagamento desenvolvido com Next.js 14, T
 
 ### Backend
 - **Next.js API Routes**: API integrada
-- **SQLite**: Banco de dados portável
+- **PostgreSQL**: Banco de dados robusto e escalável
 - **Prisma ORM**: Mapeamento objeto-relacional
 - **NextAuth.js**: Autenticação
 - **bcryptjs**: Hash de senhas
+- **Sistema de Tokens**: Gerenciamento seguro de tokens de reset
 
 ### Utilitários
 - **jsPDF + html2canvas**: Geração de PDFs
@@ -121,10 +131,12 @@ cp env.example .env.local
 
 Edite o arquivo `.env.local`:
 ```env
-DATABASE_URL="file:./folha_pagamento.db"
+DATABASE_URL="postgresql://postgres:admin@localhost:5432/folha_pagamento?schema=public"
 NEXTAUTH_URL="http://localhost:3000"
 NEXTAUTH_SECRET="your-secret-key-here"
 NODE_ENV="development"
+EMAIL_USER="your-email@domain.com"
+EMAIL_APP_PASSWORD="your-app-password"
 ```
 
 4. **Configure o banco de dados**
@@ -284,6 +296,7 @@ src/
 - `payroll_rubrics` - Rubricas de folha de pagamento
 - `employee_rubrics` - Rubricas aplicadas por funcionário
 - `company_settings` - Configurações da empresa
+- `password_reset_tokens` - Tokens seguros para recuperação de senha
 
 ### Relacionamentos
 - Funcionários → Holerites (1:N)
@@ -322,10 +335,12 @@ src/
 
 ### Variáveis de Ambiente Necessárias
 ```env
-DATABASE_URL="file:./folha_pagamento.db"
+DATABASE_URL="postgresql://postgres:admin@localhost:5432/folha_pagamento?schema=public"
 NEXTAUTH_URL="https://yourdomain.com"
 NEXTAUTH_SECRET="your-secret-key"
 NODE_ENV="production"
+EMAIL_USER="your-email@domain.com"
+EMAIL_APP_PASSWORD="your-app-password"
 ```
 
 ## 🎯 Melhorias Implementadas
@@ -337,6 +352,8 @@ NODE_ENV="production"
 - ✅ Loading states e feedback visual
 - ✅ Toast notifications para feedback
 - ✅ Tabs com destaque visual para funcionalidades principais
+- ✅ Tabelas com alinhamento proporcional e consistente
+- ✅ Cards padronizados com tamanhos de fonte uniformes
 
 ### Funcionalidades
 - ✅ Sistema de rubricas completo e funcional
@@ -351,6 +368,9 @@ NODE_ENV="production"
 - ✅ Upload de logo da empresa
 - ✅ CPF flexível para recontratação de funcionários
 - ✅ PDF de recibos otimizado em formato de holerite
+- ✅ Sistema de recuperação de senha via email
+- ✅ Tokens seguros com expiração automática
+- ✅ Interface limpa sem valores de referência desnecessários
 
 ### Performance e Estabilidade
 - ✅ APIs otimizadas e funcionais
@@ -368,10 +388,22 @@ NODE_ENV="production"
 - ✅ Labels colados aos valores para melhor legibilidade
 - ✅ Exportação da folha consolidada em PDF
 - ✅ Layout otimizado para impressão A4
+- ✅ Cards detalhados de descontos e proventos
+- ✅ Separação visual entre INSS, IRRF, Planos e Benefícios
+- ✅ Títulos de colunas alinhados proporcionalmente aos dados
+- ✅ Fontes consistentes em todos os cards
+
+### Segurança e Autenticação
+- ✅ Sistema de recuperação de senha completo
+- ✅ Tokens seguros com hash criptográfico
+- ✅ Validação de expiração de tokens
+- ✅ Banco de tokens com limpeza automática
+- ✅ Interface de reset de senha responsiva
+- ✅ Configuração de email para envio de tokens
 
 ### Backup e Portabilidade
 - ✅ Script de backup automático
-- ✅ Banco SQLite totalmente portável
+- ✅ Banco PostgreSQL robusto e escalável
 - ✅ Migração simples para novo computador
 - ✅ Instalação automática com script
 - ✅ Documentação completa de migração
@@ -403,12 +435,16 @@ Para suporte, entre em contato através dos issues do GitHub ou por email.
 
 ---
 
-**Desenvolvido com ❤️ usando Next.js, TypeScript e SQLite**
+**Desenvolvido com ❤️ usando Next.js, TypeScript e PostgreSQL**
 
-### 🎉 Sistema Totalmente Funcional e Portável!
+### 🎉 Sistema Totalmente Funcional e Profissional!
 
+- ✅ **Sistema Completo** - Folha de pagamento, holerites e recibos
+- ✅ **Segurança Robusta** - Recuperação de senha e autenticação segura
+- ✅ **Relatórios Detalhados** - Cards com descontos e proventos separados
+- ✅ **Interface Profissional** - Layout limpo e alinhamento consistente
 - ✅ **Backup Automático** - Script PowerShell incluído
 - ✅ **Migração Simples** - Um arquivo ZIP contém tudo
-- ✅ **Banco Portável** - SQLite funciona em qualquer lugar
+- ✅ **Banco PostgreSQL** - Robusto, escalável e profissional
 - ✅ **Instalação Automática** - Script de instalação incluído
 - ✅ **Documentação Completa** - Guias detalhados incluídos

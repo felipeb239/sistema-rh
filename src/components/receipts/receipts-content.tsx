@@ -93,19 +93,6 @@ export function ReceiptsContent() {
   const pagination = receiptsData?.pagination || { page: 1, totalPages: 1, totalReceipts: 0 }
   const stats = statsData || { totalReceipts: 0, totalValue: 0, averageValue: 0 }
 
-  // Debug logs
-  console.log('Receipts data:', {
-    receiptsData,
-    receipts: receipts.map(r => ({
-      id: r.id,
-      employeeName: r.employee?.name,
-      typeName: r.type?.name,
-      month: r.month,
-      year: r.year
-    })),
-    pagination,
-    stats
-  })
 
   const { data: employees = [] } = useQuery({
     queryKey: ['employees'],
@@ -216,6 +203,35 @@ export function ReceiptsContent() {
     }
   }
 
+  const handleExportBatch = async () => {
+    try {
+      setIsExporting('batch')
+      const url = `/api/export/batch-receipts?month=${selectedMonth}&year=${selectedYear}`
+      
+      const response = await fetch(url)
+      if (!response.ok) {
+        throw new Error('Erro ao exportar recibos')
+      }
+
+      // Open in new tab for printing
+      const htmlContent = await response.text()
+      const newWindow = window.open('', '_blank')
+      if (newWindow) {
+        newWindow.document.write(htmlContent)
+        newWindow.document.close()
+        // Auto-trigger print dialog for PDF generation
+        setTimeout(() => {
+          newWindow.print()
+        }, 1000)
+      }
+    } catch (error) {
+      console.error('Erro ao exportar recibos em massa:', error)
+      alert('Erro ao exportar recibos. Tente novamente.')
+    } finally {
+      setIsExporting(null)
+    }
+  }
+
   const getReceiptTypeLabel = (receipt: any) => {
     return receipt.type?.name || 'Tipo não encontrado'
   }
@@ -316,6 +332,36 @@ export function ReceiptsContent() {
           </div>
         </CardContent>
       </Card>
+
+      {/* Botão de Exportação em Massa */}
+      {receipts.length > 0 && (
+        <Card>
+          <CardContent className="pt-6">
+            <div className="flex justify-center">
+              <Button 
+                onClick={() => handleExportBatch()}
+                className="bg-green-600 hover:bg-green-700"
+                disabled={isExporting === 'batch'}
+              >
+                {isExporting === 'batch' ? (
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                    Gerando PDF...
+                  </>
+                ) : (
+                  <>
+                    <FileDown className="mr-2 h-4 w-4" />
+                    Exportar Todos os Recibos para Impressão
+                  </>
+                )}
+              </Button>
+            </div>
+            <p className="text-center text-sm text-muted-foreground mt-2">
+              Gera um PDF com todos os recibos do período {selectedMonth}/{selectedYear} para impressão e assinatura
+            </p>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Stats */}
       <div className="grid gap-4 md:grid-cols-3">

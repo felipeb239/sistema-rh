@@ -50,25 +50,44 @@ export async function GET(request: NextRequest) {
     // Buscar configurações da empresa
     const companySettings = await prisma.companySettings.findFirst()
 
-    // Calcular totais
+    // Calcular totais detalhados
     const totals = {
       totalGrossSalary: 0,
       totalNetSalary: 0,
       totalDiscounts: 0,
-      count: payrolls.length
+      count: payrolls.length,
+      // Totais detalhados por tipo de desconto
+      totalInss: 0,
+      totalIrrf: 0,
+      totalHealthInsurance: 0,
+      totalDentalInsurance: 0,
+      totalCustomDiscounts: 0,
+      totalOtherDiscounts: 0,
+      // Totais de proventos
+      totalBaseSalary: 0
     }
 
     payrolls.forEach(payroll => {
       totals.totalGrossSalary += Number(payroll.grossSalary)
       totals.totalNetSalary += Number(payroll.netSalary)
+      totals.totalBaseSalary += Number(payroll.baseSalary)
       
-      const totalDiscounts = Number(payroll.inssDiscount) + 
-                           Number(payroll.irrfDiscount) + 
-                           Number(payroll.healthInsurance) + 
-                           Number(payroll.dentalInsurance) + 
-                           Number(payroll.customDiscount) + 
-                           Number(payroll.otherDiscounts)
+      // Descontos detalhados
+      const inssValue = Number(payroll.inssDiscount)
+      const irrfValue = Number(payroll.irrfDiscount)
+      const healthValue = Number(payroll.healthInsurance)
+      const dentalValue = Number(payroll.dentalInsurance)
+      const customValue = Number(payroll.customDiscount)
+      const otherValue = Number(payroll.otherDiscounts)
       
+      totals.totalInss += inssValue
+      totals.totalIrrf += irrfValue
+      totals.totalHealthInsurance += healthValue
+      totals.totalDentalInsurance += dentalValue
+      totals.totalCustomDiscounts += customValue
+      totals.totalOtherDiscounts += otherValue
+      
+      const totalDiscounts = inssValue + irrfValue + healthValue + dentalValue + customValue + otherValue
       totals.totalDiscounts += totalDiscounts
     })
 
@@ -168,6 +187,113 @@ function generateSimpleHTML(payrolls: any[], totals: any, companySettings: any, 
             padding-top: 10px;
             margin-top: 10px;
         }
+        
+        /* Cards de Descontos e Proventos */
+        .deductions-summary, .earnings-summary {
+            margin: 20px 0;
+            padding: 20px;
+            border-radius: 8px;
+        }
+        
+        .deductions-summary {
+            background: linear-gradient(135deg, #fff5f5 0%, #fed7d7 100%);
+            border: 2px solid #fc8181;
+        }
+        
+        .earnings-summary {
+            background: linear-gradient(135deg, #f0fff4 0%, #c6f6d5 100%);
+            border: 2px solid #68d391;
+        }
+        
+        .deductions-summary h3, .earnings-summary h3 {
+            margin: 0 0 15px 0;
+            font-size: 16px;
+            font-weight: bold;
+        }
+        
+        .deductions-summary h3 {
+            color: #e74c3c;
+        }
+        
+        .earnings-summary h3 {
+            color: #27ae60;
+        }
+        
+        .cards-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 15px;
+        }
+        
+        .deduction-card, .earning-card {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            border: 2px solid #e2e8f0;
+        }
+        
+        .deduction-card.inss {
+            border-color: #f56565;
+            background: linear-gradient(135deg, #fff5f5 0%, #fed7d7 100%);
+        }
+        
+        .deduction-card.irrf {
+            border-color: #ed8936;
+            background: linear-gradient(135deg, #fffaf0 0%, #feebc8 100%);
+        }
+        
+        .deduction-card.health {
+            border-color: #4299e1;
+            background: linear-gradient(135deg, #ebf8ff 0%, #bee3f8 100%);
+        }
+        
+        .deduction-card.dental {
+            border-color: #48bb78;
+            background: linear-gradient(135deg, #f0fff4 0%, #c6f6d5 100%);
+        }
+        
+        .deduction-card.others {
+            border-color: #9f7aea;
+            background: linear-gradient(135deg, #faf5ff 0%, #e9d8fd 100%);
+        }
+        
+        .earning-card.salary {
+            border-color: #48bb78;
+            background: linear-gradient(135deg, #f0fff4 0%, #c6f6d5 100%);
+        }
+        
+        .earning-card.benefits {
+            border-color: #38a169;
+            background: linear-gradient(135deg, #e6fffa 0%, #b2f5ea 100%);
+        }
+        
+        .card-icon {
+            font-size: 24px;
+            margin-bottom: 8px;
+        }
+        
+        .card-title {
+            font-weight: bold;
+            margin-bottom: 8px;
+            font-size: 12px;
+            color: #2d3748;
+        }
+        
+        .card-value {
+            font-weight: bold;
+            font-size: 14px;
+            color: #2d3748;
+        }
+        
+        .deduction-card .card-value {
+            color: #e53e3e;
+        }
+        
+        .earning-card .card-value {
+            color: #38a169;
+        }
     </style>
 </head>
 <body>
@@ -227,6 +353,55 @@ function generateSimpleHTML(payrolls: any[], totals: any, companySettings: any, 
         <div class="total-item total-final">
             <span>SALÁRIO LÍQUIDO TOTAL:</span>
             <span>${formatCurrency(totals.totalNetSalary)}</span>
+        </div>
+    </div>
+
+    <!-- Cards de Descontos Detalhados -->
+    <div class="deductions-summary">
+        <h3>💸 RESUMO DETALHADO DOS DESCONTOS</h3>
+        <div class="cards-grid">
+            <div class="deduction-card inss">
+                <div class="card-icon">🏛️</div>
+                <div class="card-title">INSS</div>
+                <div class="card-value">${formatCurrency(totals.totalInss)}</div>
+            </div>
+            <div class="deduction-card irrf">
+                <div class="card-icon">📊</div>
+                <div class="card-title">IRRF</div>
+                <div class="card-value">${formatCurrency(totals.totalIrrf)}</div>
+            </div>
+            <div class="deduction-card health">
+                <div class="card-icon">🏥</div>
+                <div class="card-title">PLANO DE SAÚDE</div>
+                <div class="card-value">${formatCurrency(totals.totalHealthInsurance)}</div>
+            </div>
+            <div class="deduction-card dental">
+                <div class="card-icon">🦷</div>
+                <div class="card-title">PLANO ODONTOLÓGICO</div>
+                <div class="card-value">${formatCurrency(totals.totalDentalInsurance)}</div>
+            </div>
+            <div class="deduction-card others">
+                <div class="card-icon">📝</div>
+                <div class="card-title">OUTROS DESCONTOS</div>
+                <div class="card-value">${formatCurrency(totals.totalCustomDiscounts + totals.totalOtherDiscounts)}</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Cards de Proventos Detalhados -->
+    <div class="earnings-summary">
+        <h3>💰 RESUMO DETALHADO DOS PROVENTOS</h3>
+        <div class="cards-grid">
+            <div class="earning-card salary">
+                <div class="card-icon">💵</div>
+                <div class="card-title">SALÁRIO BASE</div>
+                <div class="card-value">${formatCurrency(totals.totalBaseSalary)}</div>
+            </div>
+            <div class="earning-card benefits">
+                <div class="card-icon">🎁</div>
+                <div class="card-title">BENEFÍCIOS</div>
+                <div class="card-value">${formatCurrency(totals.totalGrossSalary - totals.totalBaseSalary)}</div>
+            </div>
         </div>
     </div>
 </body>

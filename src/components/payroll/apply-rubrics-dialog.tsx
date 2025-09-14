@@ -57,7 +57,7 @@ export function ApplyRubricsDialog({ employeeId, employeeName, onApply }: ApplyR
   }
 
   const discountRubrics = rubrics.filter((r: PayrollRubric) => r.type === 'discount')
-  const benefitRubrics = rubrics.filter((r: PayrollRubric) => r.type === 'benefit')
+  const benefitRubrics = rubrics.filter((r: PayrollRubric) => r.type === 'proventos')
 
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
@@ -125,9 +125,9 @@ export function ApplyRubricsDialog({ employeeId, employeeName, onApply }: ApplyR
           {/* Benefícios */}
           <Card>
             <CardHeader>
-              <CardTitle className="text-green-600 text-lg">Benefícios</CardTitle>
+              <CardTitle className="text-green-600 text-lg">Proventos</CardTitle>
               <CardDescription>
-                Selecione os benefícios que se aplicam a este funcionário
+                Selecione os proventos que se aplicam a este funcionário
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -161,7 +161,7 @@ export function ApplyRubricsDialog({ employeeId, employeeName, onApply }: ApplyR
                 ))}
                 {benefitRubrics.length === 0 && (
                   <p className="text-muted-foreground text-center py-4">
-                    Nenhum benefício disponível
+                    Nenhum provento disponível
                   </p>
                 )}
               </div>

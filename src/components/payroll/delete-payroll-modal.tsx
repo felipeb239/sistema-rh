@@ -11,6 +11,7 @@ import {
   Calendar,
   Loader2
 } from 'lucide-react'
+import { toast } from 'sonner'
 
 interface DeletePayrollModalProps {
   selectedMonth: number
@@ -54,13 +55,13 @@ export function DeletePayrollModal({
       }
 
       const result = await response.json()
-      alert(`Folha de pagamento excluída com sucesso! ${result.deleted} holerites removidos.`)
+      toast.success(`Folha de pagamento excluída com sucesso! ${result.deleted} holerites removidos.`)
       
       setIsOpen(false)
       onPayrollDeleted()
     } catch (error) {
       console.error('Erro ao excluir folha:', error)
-      alert(error instanceof Error ? error.message : 'Erro ao excluir folha de pagamento')
+      toast.error(error instanceof Error ? error.message : 'Erro ao excluir folha de pagamento')
     } finally {
       setIsDeleting(false)
     }

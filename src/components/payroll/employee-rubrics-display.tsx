@@ -66,7 +66,7 @@ export function EmployeeRubricsDisplay({
       {/* Benefícios */}
       {totals.benefits.length > 0 && (
         <div className="space-y-2">
-          <h4 className="text-sm font-medium text-green-700">Benefícios</h4>
+          <h4 className="text-sm font-medium text-green-700">Proventos</h4>
           <div className="space-y-1">
             {totals.benefits.map((rubric, index) => (
               <div key={index} className="flex justify-between items-center text-sm">
@@ -112,7 +112,7 @@ export function EmployeeRubricsDisplay({
         <div className="border-t pt-2 space-y-1">
           {totals.benefits.length > 0 && (
             <div className="flex justify-between text-sm">
-              <span className="text-green-700">Total de Benefícios:</span>
+              <span className="text-green-700">Total de Proventos:</span>
               <span className="text-green-600 font-medium">
                 + R$ {totals.totalBenefits.toFixed(2)}
               </span>

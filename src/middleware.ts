@@ -17,10 +17,11 @@ export const config = {
      * Match all request paths except for the ones starting with:
      * - api (API routes - let them handle auth internally)
      * - login (login page)
+     * - reset-password (password reset page)
      * - _next/static (static files)
      * - _next/image (image optimization files)
      * - favicon.ico (favicon file)
      */
-    "/((?!api|login|_next/static|_next/image|favicon.ico).*)",
+    "/((?!api|login|reset-password|_next/static|_next/image|favicon.ico).*)",
   ],
 }

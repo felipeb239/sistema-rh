@@ -36,7 +36,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json()
-    console.log('Payroll rubric POST body:', body)
+    console.log('🔧 Criando rubrica - Dados recebidos:', body)
     const { name, description, type, code } = body
 
     console.log('Validating fields:', { 
@@ -44,7 +44,7 @@ export async function POST(request: NextRequest) {
       nameTrimmed: name?.trim(), 
       type: type,
       nameLength: name?.length,
-      typeValid: ['discount', 'benefit'].includes(type)
+      typeValid: ['discount', 'proventos'].includes(type)
     })
 
     if (!name || !name.trim()) {
@@ -57,9 +57,9 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Tipo é obrigatório' }, { status: 400 })
     }
 
-    if (!['discount', 'benefit'].includes(type)) {
+    if (!['discount', 'proventos'].includes(type)) {
       console.log('Validation error: invalid type', { type })
-      return NextResponse.json({ error: 'Tipo deve ser "discount" ou "benefit"' }, { status: 400 })
+      return NextResponse.json({ error: 'Tipo deve ser "discount" ou "proventos"' }, { status: 400 })
     }
 
     console.log('All validations passed, proceeding to create rubric')

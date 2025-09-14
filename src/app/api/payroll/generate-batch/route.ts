@@ -39,7 +39,10 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Buscar dados dos funcionários com suas rubricas
+    // Buscar dados dos funcionários com suas rubricas e recibos
+    console.log('Buscando funcionários com IDs:', employeeIds)
+    console.log('Período:', { month, year })
+    
     const employees = await prisma.employee.findMany({
       where: {
         id: {
@@ -70,9 +73,25 @@ export async function POST(request: NextRequest) {
           include: {
             rubric: true
           }
+        },
+        receipts: {
+          where: {
+            month: month,
+            year: year
+          },
+          include: {
+            type: true
+          }
         }
       }
     })
+    
+    console.log('Funcionários encontrados:', employees.map(emp => ({
+      id: emp.id,
+      name: emp.name,
+      receiptsCount: emp.receipts.length,
+      receipts: emp.receipts.map(r => ({ type: r.type.name, value: r.value }))
+    })))
 
     if (employees.length === 0) {
       return NextResponse.json(
@@ -81,7 +100,7 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Criar holerites base para cada funcionário com rubricas aplicadas
+    // Criar holerites base para cada funcionário com rubricas e recibos aplicados
     const payrollsToCreate = employees.map(employee => {
       let grossSalary = Number(employee.salary)
       let totalDiscounts = 0
@@ -90,8 +109,11 @@ export async function POST(request: NextRequest) {
       let otherDiscounts = 0
       let customDiscount = 0
       let customDiscountDescription = ''
+      let receiptBenefits = 0
+      let receiptDiscounts = 0
 
       // Calcular rubricas do funcionário
+      console.log(`📋 Processando rubricas para ${employee.name}:`)
       employee.employeeRubrics.forEach(rubric => {
         let value = 0
         
@@ -102,28 +124,83 @@ export async function POST(request: NextRequest) {
         }
 
         if (value > 0) {
-          if (rubric.rubric.type === 'benefit') {
+          const rubricName = rubric.customName || rubric.rubric.name
+          console.log(`   📋 Rubrica: ${rubricName}`)
+          console.log(`   💰 Valor: R$ ${value}`)
+          console.log(`   🏷️ Tipo: ${rubric.rubric.type}`)
+          console.log(`   🔢 Código: ${rubric.rubric.code || 'sem código'}`)
+          
+          if (rubric.rubric.type === 'proventos') {
             grossSalary += value
+            console.log(`   ✅ Somado ao salário bruto. Novo total: R$ ${grossSalary}`)
           } else {
             totalDiscounts += value
             
             // Categorizar descontos
-            const rubricName = (rubric.customName || rubric.rubric.name).toLowerCase()
-            if (rubricName.includes('saúde') || rubricName.includes('plano de saúde')) {
+            const rubricNameLower = rubricName.toLowerCase()
+            console.log(`   🔍 Categorizando: "${rubricNameLower}"`)
+            
+            if (rubricNameLower.includes('saúde') || rubricNameLower.includes('plano de saúde')) {
               healthInsurance += value
-            } else if (rubricName.includes('odontológico') || rubricName.includes('dental')) {
+              console.log(`   🏥 Categorizado como Plano de Saúde: R$ ${value}`)
+            } else if (rubricNameLower.includes('odontológico') || rubricNameLower.includes('dental')) {
               dentalInsurance += value
-            } else if (rubricName.includes('empréstimo') || rubricName.includes('consignado')) {
+              console.log(`   🦷 Categorizado como Plano Odontológico: R$ ${value}`)
+            } else if (rubricNameLower.includes('empréstimo') || rubricNameLower.includes('consignado')) {
               customDiscount += value
-              customDiscountDescription = rubric.customName || rubric.rubric.name
+              customDiscountDescription = rubricName
+              console.log(`   💳 Categorizado como Empréstimo: R$ ${value}`)
             } else {
               otherDiscounts += value
+              console.log(`   📝 Categorizado como Outros Descontos: R$ ${value}`)
             }
+            console.log(`   ✅ Somado aos descontos. Total descontos: R$ ${totalDiscounts}`)
           }
         }
       })
 
+      // Calcular recibos do funcionário para o período
+      console.log(`Processando recibos para funcionário ${employee.name}:`, employee.receipts)
+      employee.receipts.forEach(receipt => {
+        console.log(`Verificando recibo: ${receipt.type.name} - Mês: ${receipt.month}, Ano: ${receipt.year} - Período atual: ${month}/${year}`)
+        if (receipt.month === month && receipt.year === year) {
+          const receiptValue = Number(receipt.value)
+          const receiptTypeName = receipt.type.name.toLowerCase()
+          
+          console.log(`✅ Recibo encontrado: ${receiptTypeName} = R$ ${receiptValue}`)
+          
+          // Categorizar recibos como benefícios ou descontos
+          if (receiptTypeName.includes('vale') || receiptTypeName.includes('alimentação') || 
+              receiptTypeName.includes('transporte') || receiptTypeName.includes('refeição') ||
+              receiptTypeName.includes('gratificação') || receiptTypeName.includes('função') ||
+              receiptTypeName.includes('ajuda') || receiptTypeName.includes('custo') ||
+              receiptTypeName.includes('ressarcimento') || receiptTypeName.includes('combustível') ||
+              receiptTypeName.includes('hotel') || receiptTypeName.includes('hospedagem')) {
+            console.log(`✅ Categorizado como BENEFÍCIO: ${receiptTypeName}`)
+            receiptBenefits += receiptValue
+            grossSalary += receiptValue
+            console.log(`✅ Salário bruto atualizado: R$ ${grossSalary}`)
+          } else {
+            console.log(`✅ Categorizado como DESCONTO: ${receiptTypeName}`)
+            // Recibos que são descontos (ex: empréstimos, consignados)
+            receiptDiscounts += receiptValue
+            totalDiscounts += receiptValue
+            otherDiscounts += receiptValue
+          }
+        } else {
+          console.log(`❌ Recibo não corresponde ao período: ${receipt.month}/${receipt.year} != ${month}/${year}`)
+        }
+      })
+
       const netSalary = grossSalary - totalDiscounts
+
+      console.log(`📊 RESUMO FINAL para ${employee.name}:`)
+      console.log(`   Salário base: R$ ${employee.salary}`)
+      console.log(`   Receipt Benefits: R$ ${receiptBenefits}`)
+      console.log(`   Receipt Discounts: R$ ${receiptDiscounts}`)
+      console.log(`   Salário bruto final: R$ ${grossSalary}`)
+      console.log(`   Total descontos: R$ ${totalDiscounts}`)
+      console.log(`   Salário líquido: R$ ${netSalary}`)
 
       return {
         employeeId: employee.id,
@@ -140,7 +217,9 @@ export async function POST(request: NextRequest) {
         dentalInsurance,
         otherDiscounts,
         customDiscount,
-        customDiscountDescription: customDiscountDescription || null
+        customDiscountDescription: customDiscountDescription || null,
+        receiptBenefits,
+        receiptDiscounts
       }
     })
 

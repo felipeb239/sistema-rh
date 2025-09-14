@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { useQuery } from '@tanstack/react-query'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -15,9 +15,11 @@ import {
   Calendar, 
   CheckCircle, 
   AlertCircle,
-  Loader2
+  Loader2,
+  Edit3
 } from 'lucide-react'
 import { formatCurrency } from '@/lib/utils'
+import { toast } from 'sonner'
 
 interface Employee {
   id: string
@@ -38,6 +40,14 @@ export function NewPayrollModal({ onPayrollGenerated }: NewPayrollModalProps) {
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear())
   const [selectedEmployees, setSelectedEmployees] = useState<string[]>([])
   const [isGenerating, setIsGenerating] = useState(false)
+  
+  // Estados para edição de salário
+  const [isSalaryModalOpen, setIsSalaryModalOpen] = useState(false)
+  const [selectedEmployeeForEdit, setSelectedEmployeeForEdit] = useState<Employee | null>(null)
+  const [newSalary, setNewSalary] = useState('')
+  const [isUpdatingSalary, setIsUpdatingSalary] = useState(false)
+  
+  const queryClient = useQueryClient()
 
   // Buscar funcionários ativos
   const { data: employees, isLoading: employeesLoading } = useQuery({
@@ -96,9 +106,49 @@ export function NewPayrollModal({ onPayrollGenerated }: NewPayrollModalProps) {
     )
   }
 
+  const handleEditSalary = (employee: Employee) => {
+    setSelectedEmployeeForEdit(employee)
+    setNewSalary(employee.salary.toString())
+    setIsSalaryModalOpen(true)
+  }
+
+  const handleUpdateSalary = async () => {
+    if (!selectedEmployeeForEdit || !newSalary) return
+
+    setIsUpdatingSalary(true)
+    try {
+      const response = await fetch(`/api/employees/${selectedEmployeeForEdit.id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          salary: parseFloat(newSalary)
+        })
+      })
+
+      if (!response.ok) {
+        throw new Error('Erro ao atualizar salário')
+      }
+
+      // Invalidar e recarregar a query de funcionários
+      queryClient.invalidateQueries({ queryKey: ['employees'] })
+      
+      toast.success('Salário atualizado com sucesso!')
+      setIsSalaryModalOpen(false)
+      setSelectedEmployeeForEdit(null)
+      setNewSalary('')
+    } catch (error) {
+      console.error('Erro ao atualizar salário:', error)
+      toast.error('Erro ao atualizar salário')
+    } finally {
+      setIsUpdatingSalary(false)
+    }
+  }
+
   const handleGeneratePayroll = async () => {
     if (selectedEmployees.length === 0) {
-      alert('Selecione pelo menos um funcionário')
+      toast.error('Selecione pelo menos um funcionário')
       return
     }
 
@@ -122,14 +172,14 @@ export function NewPayrollModal({ onPayrollGenerated }: NewPayrollModalProps) {
       }
 
       const result = await response.json()
-      alert(`Folha de pagamento gerada com sucesso! ${result.created} holerites criados.`)
+      toast.success(`Folha de pagamento gerada com sucesso! ${result.created} holerites criados.`)
       
       setIsOpen(false)
       setSelectedEmployees([])
       onPayrollGenerated()
     } catch (error) {
       console.error('Erro ao gerar folha:', error)
-      alert(error instanceof Error ? error.message : 'Erro ao gerar folha de pagamento')
+      toast.error(error instanceof Error ? error.message : 'Erro ao gerar folha de pagamento')
     } finally {
       setIsGenerating(false)
     }
@@ -287,8 +337,19 @@ export function NewPayrollModal({ onPayrollGenerated }: NewPayrollModalProps) {
                           {employee.position} • {employee.department}
                         </div>
                       </div>
-                      <div className="text-sm font-medium text-green-600">
-                        {formatCurrency(employee.salary)}
+                      <div className="flex items-center space-x-2">
+                        <div className="text-sm font-medium text-green-600">
+                          {formatCurrency(employee.salary)}
+                        </div>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleEditSalary(employee)}
+                          className="h-6 w-6 p-0"
+                          title="Editar salário"
+                        >
+                          <Edit3 className="h-3 w-3" />
+                        </Button>
                       </div>
                     </div>
                   ))}
@@ -333,6 +394,60 @@ export function NewPayrollModal({ onPayrollGenerated }: NewPayrollModalProps) {
           </div>
         </div>
       </DialogContent>
+
+      {/* Modal para Editar Salário */}
+      <Dialog open={isSalaryModalOpen} onOpenChange={setIsSalaryModalOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Editar Salário</DialogTitle>
+            <DialogDescription>
+              Atualize o salário do funcionário: <strong>{selectedEmployeeForEdit?.name}</strong>
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="salary">Novo Salário (R$)</Label>
+              <Input
+                id="salary"
+                type="number"
+                step="0.01"
+                min="0"
+                value={newSalary}
+                onChange={(e) => setNewSalary(e.target.value)}
+                placeholder="Ex: 5000.00"
+              />
+            </div>
+            
+            <div className="text-sm text-muted-foreground">
+              Salário atual: <span className="font-medium">{formatCurrency(selectedEmployeeForEdit?.salary || 0)}</span>
+            </div>
+          </div>
+
+          <div className="flex justify-end space-x-2">
+            <Button
+              variant="outline"
+              onClick={() => setIsSalaryModalOpen(false)}
+              disabled={isUpdatingSalary}
+            >
+              Cancelar
+            </Button>
+            <Button
+              onClick={handleUpdateSalary}
+              disabled={!newSalary || isUpdatingSalary || parseFloat(newSalary) <= 0}
+            >
+              {isUpdatingSalary ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Atualizando...
+                </>
+              ) : (
+                'Atualizar Salário'
+              )}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </Dialog>
   )
 }

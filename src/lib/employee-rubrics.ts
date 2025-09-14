@@ -54,7 +54,7 @@ export function calculateEmployeeRubrics(
         name: employeeRubric.customName || employeeRubric.rubric?.name || 'Rubrica',
         value,
         type,
-        isBenefit: employeeRubric.rubric?.type === 'benefit'
+        isBenefit: employeeRubric.rubric?.type === 'proventos'
       }
     })
 }

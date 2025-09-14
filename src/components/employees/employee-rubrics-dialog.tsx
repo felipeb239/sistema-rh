@@ -215,7 +215,7 @@ export function EmployeeRubricsDialog({
                   <SelectContent>
                     {availableRubrics.map((rubric) => (
                       <SelectItem key={rubric.id} value={rubric.id}>
-                        {rubric.name} ({rubric.type === 'benefit' ? 'Benefício' : 'Desconto'})
+                        {rubric.name} ({rubric.type === 'proventos' ? 'Proventos' : 'Desconto'})
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -364,8 +364,8 @@ export function EmployeeRubricsDialog({
                             <h4 className="font-medium">
                               {rubric.customName || rubric.rubric?.name}
                             </h4>
-                            <Badge variant={rubric.rubric?.type === 'benefit' ? 'success' : 'destructive'}>
-                              {rubric.rubric?.type === 'benefit' ? 'Benefício' : 'Desconto'}
+                            <Badge variant={rubric.rubric?.type === 'proventos' ? 'success' : 'destructive'}>
+                              {rubric.rubric?.type === 'proventos' ? 'Proventos' : 'Desconto'}
                             </Badge>
                           </div>
                           <div className="text-sm text-gray-600 mt-1">
