@@ -218,11 +218,14 @@ export function EmployeesContent() {
                         <p className="text-sm text-muted-foreground">
                           {employee.position} • {employee.department}
                         </p>
-                        {employee.cpf && (
-                          <p className="text-xs text-muted-foreground">
-                            CPF: {formatCPF(employee.cpf)}
-                          </p>
-                        )}
+                        <div className="flex items-center gap-4 text-xs text-muted-foreground">
+                          {employee.cpf && (
+                            <span>CPF: {formatCPF(employee.cpf)}</span>
+                          )}
+                          {employee.cbo && (
+                            <span>CBO: {employee.cbo}</span>
+                          )}
+                        </div>
                       </div>
                     </div>
                   </div>

@@ -133,20 +133,8 @@ export async function POST(
       return NextResponse.json({ error: 'Rubrica não encontrada' }, { status: 404 })
     }
 
-    // Verificar se já existe uma rubrica ativa aplicada para este colaborador
-    const existingRubric = await prisma.employeeRubric.findFirst({
-      where: {
-        employeeId,
-        rubricId,
-        isActive: true
-      }
-    })
-
-    if (existingRubric) {
-      return NextResponse.json({ 
-        error: 'Esta rubrica já foi aplicada a este colaborador' 
-      }, { status: 400 })
-    }
+    // Permitir múltiplas rubricas do mesmo tipo (para empréstimos)
+    // Removida a verificação de duplicação para permitir múltiplos empréstimos
 
     // Criar rubrica do colaborador
     const employeeRubric = await prisma.employeeRubric.create({
@@ -154,8 +142,8 @@ export async function POST(
         employeeId,
         rubricId,
         customName,
-        customValue: customValue ? parseFloat(customValue) : null,
-        customPercentage: customPercentage ? parseFloat(customPercentage) : null,
+        customValue: customValue ? parseFloat(customValue).toString() : null,
+        customPercentage: customPercentage ? parseFloat(customPercentage).toString() : null,
         startDate: startDate ? new Date(startDate) : null,
         endDate: endDate ? new Date(endDate) : null
       },

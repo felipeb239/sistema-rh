@@ -6,7 +6,14 @@ export default withAuth(
   },
   {
     callbacks: {
-      authorized: ({ token }) => !!token
+      authorized: ({ token, req }) => {
+        // Permitir acesso à página de login e reset-password sem token
+        if (req.nextUrl.pathname.startsWith('/login') || 
+            req.nextUrl.pathname.startsWith('/reset-password')) {
+          return true
+        }
+        return !!token
+      }
     },
   }
 )

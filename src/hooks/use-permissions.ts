@@ -6,6 +6,25 @@ import { Module, canAccessModule, getAccessibleModules, getUserLevelInfo } from 
 export function usePermissions() {
   const { data: session, status } = useSession()
   
+  // Verificação de segurança para evitar erros durante o carregamento
+  if (status === 'loading') {
+    return {
+      user: null,
+      userLevel: 1,
+      isLoading: true,
+      canAccess: {
+        module: () => false,
+        action: () => false
+      },
+      accessibleModules: [],
+      levelInfo: { name: 'Carregando...', description: '', color: 'gray' },
+      isAdmin: false,
+      isSystemUser: false,
+      isSecretariaOnly: true,
+      isAuthenticated: false
+    }
+  }
+
   const user = session?.user
   const userLevel = user?.level || 1
   const isLoading = status === 'loading'

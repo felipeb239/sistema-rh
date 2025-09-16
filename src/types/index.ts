@@ -5,6 +5,8 @@ export interface User {
   email?: string
   role: 'admin' | 'user'
   status: 'active' | 'inactive'
+  level: number
+  theme: 'light' | 'dark' | 'system'
   createdAt: Date
   updatedAt: Date
 }
@@ -15,6 +17,7 @@ export interface Employee {
   cpf?: string
   position?: string
   department?: string
+  cbo?: string
   hireDate?: Date
   salary?: number
   status: 'active' | 'inactive'

@@ -71,7 +71,16 @@ export function ReceiptForm({ receipt, employees, onClose }: ReceiptFormProps) {
 
   useEffect(() => {
     if (receipt) {
+      console.log('📋 ReceiptForm - Recebendo recibo para edição:', receipt)
       setFormData({
+        employeeId: receipt.employeeId || '',
+        typeId: receipt.typeId || '',
+        month: receipt.month,
+        year: receipt.year,
+        dailyValue: receipt.dailyValue?.toString() || '',
+        days: receipt.days?.toString() || '22'
+      })
+      console.log('📋 ReceiptForm - FormData preenchido:', {
         employeeId: receipt.employeeId || '',
         typeId: receipt.typeId || '',
         month: receipt.month,

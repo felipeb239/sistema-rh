@@ -21,9 +21,9 @@ export function UsersContent() {
   // Filtrar usuários
   useEffect(() => {
     const filtered = users.filter(user =>
-      user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (user.name?.toLowerCase().includes(searchTerm.toLowerCase()) || false) ||
       user.username.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      user.email?.toLowerCase().includes(searchTerm.toLowerCase())
+      (user.email?.toLowerCase().includes(searchTerm.toLowerCase()) || false)
     )
     setFilteredUsers(filtered)
   }, [searchTerm, users])
@@ -57,31 +57,31 @@ export function UsersContent() {
   const getLevelInfo = (level: number) => {
     switch (level) {
       case 1:
-        return { name: 'Secretaria', color: 'bg-blue-100 text-blue-800' }
+        return { name: 'Secretaria', color: 'bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200' }
       case 2:
-        return { name: 'Sistema', color: 'bg-green-100 text-green-800' }
+        return { name: 'Sistema', color: 'bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200' }
       case 3:
-        return { name: 'Admin', color: 'bg-purple-100 text-purple-800' }
+        return { name: 'Admin', color: 'bg-purple-100 dark:bg-purple-900 text-purple-800 dark:text-purple-200' }
       default:
-        return { name: 'Desconhecido', color: 'bg-gray-100 text-gray-800' }
+        return { name: 'Desconhecido', color: 'bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-200' }
     }
   }
 
   const getStatusInfo = (status: string) => {
     switch (status) {
       case 'active':
-        return { name: 'Ativo', color: 'bg-green-100 text-green-800' }
+        return { name: 'Ativo', color: 'bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200' }
       case 'inactive':
-        return { name: 'Inativo', color: 'bg-red-100 text-red-800' }
+        return { name: 'Inativo', color: 'bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-200' }
       default:
-        return { name: 'Desconhecido', color: 'bg-gray-100 text-gray-800' }
+        return { name: 'Desconhecido', color: 'bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-200' }
     }
   }
 
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="text-gray-500">Carregando usuários...</div>
+        <div className="text-muted-foreground">Carregando usuários...</div>
       </div>
     )
   }
@@ -102,8 +102,8 @@ export function UsersContent() {
       {/* Cabeçalho */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Gerenciamento de Usuários</h1>
-          <p className="text-gray-600 mt-2">
+          <h1 className="text-3xl font-bold text-foreground">Gerenciamento de Usuários</h1>
+          <p className="text-muted-foreground mt-2">
             Gerencie os usuários e níveis de acesso do sistema
           </p>
         </div>
@@ -135,7 +135,7 @@ export function UsersContent() {
 
       {/* Busca */}
       <div className="relative">
-        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
         <Input
           placeholder="Buscar por nome, usuário ou email..."
           value={searchTerm}
@@ -155,11 +155,11 @@ export function UsersContent() {
               <CardHeader className="pb-3">
                 <div className="flex items-start justify-between">
                   <div className="flex items-center gap-3">
-                    <div className="p-2 bg-gray-100 rounded-full">
-                      <Shield className="h-4 w-4 text-gray-600" />
+                    <div className="p-2 bg-gray-100 dark:bg-gray-800 rounded-full">
+                      <Shield className="h-4 w-4 text-gray-600 dark:text-gray-300" />
                     </div>
                     <div>
-                      <CardTitle className="text-lg">{user.name}</CardTitle>
+                      <CardTitle className="text-lg">{user.name || 'Nome não informado'}</CardTitle>
                       <CardDescription>@{user.username}</CardDescription>
                     </div>
                   </div>
@@ -194,14 +194,14 @@ export function UsersContent() {
                 <div className="space-y-3">
                   {/* Email */}
                   {user.email && (
-                    <div className="text-sm text-gray-600">
+                    <div className="text-sm text-muted-foreground">
                       <strong>Email:</strong> {user.email}
                     </div>
                   )}
 
                   {/* Nível de acesso */}
                   <div className="flex items-center gap-2">
-                    <span className="text-sm font-medium text-gray-700">Nível:</span>
+                    <span className="text-sm font-medium text-foreground">Nível:</span>
                     <Badge className={levelInfo.color}>
                       {levelInfo.name}
                     </Badge>
@@ -209,14 +209,14 @@ export function UsersContent() {
 
                   {/* Status */}
                   <div className="flex items-center gap-2">
-                    <span className="text-sm font-medium text-gray-700">Status:</span>
+                    <span className="text-sm font-medium text-foreground">Status:</span>
                     <Badge className={statusInfo.color}>
                       {statusInfo.name}
                     </Badge>
                   </div>
 
                   {/* Data de criação */}
-                  <div className="text-sm text-gray-500">
+                  <div className="text-sm text-muted-foreground">
                     Criado em: {new Date(user.createdAt).toLocaleDateString('pt-BR')}
                   </div>
                 </div>
@@ -228,11 +228,11 @@ export function UsersContent() {
 
       {filteredUsers.length === 0 && (
         <div className="text-center py-12">
-          <Shield className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-          <h3 className="text-lg font-medium text-gray-900 mb-2">
+          <Shield className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+          <h3 className="text-lg font-medium text-foreground mb-2">
             {searchTerm ? 'Nenhum usuário encontrado' : 'Nenhum usuário cadastrado'}
           </h3>
-          <p className="text-gray-600">
+          <p className="text-muted-foreground">
             {searchTerm 
               ? 'Tente ajustar os termos de busca'
               : 'Comece adicionando um novo usuário'

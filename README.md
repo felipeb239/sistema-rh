@@ -15,15 +15,17 @@ Sistema completo de gestão de folha de pagamento desenvolvido com Next.js 14, T
 
 ### 👥 Gestão de Funcionários
 - **CRUD Completo**: Cadastro, edição, visualização e exclusão
-- **Validação de CPF**: Validação automática de CPF brasileiro
+- **Validação de CPF**: Validação automática de CPF brasileiro com máscara
+- **Máscara de Salário**: Formatação automática em moeda brasileira
+- **Campo CBO**: Código Brasileiro de Ocupações para classificação profissional
 - **Busca Inteligente**: Sistema de busca em tempo real
-- **Dados Completos**: Nome, CPF, cargo, departamento, data de admissão, salário
+- **Dados Completos**: Nome, CPF, cargo, departamento, CBO, data de admissão, salário
 - **Modal de Confirmação**: Interface elegante para confirmações de exclusão
 - **CPF Flexível**: Permite cadastro de funcionários com mesmo CPF (recontratação)
 
 ### 💰 Holerites (Folha de Pagamento)
 - **Cálculos Automáticos**: INSS, FGTS e IRRF baseados nas tabelas oficiais
-- **Salário Base Automático**: Preenchido automaticamente com o salário do funcionário
+- **Salário Base Editável**: Permite editar o salário base para casos específicos (funcionários admitidos no meio do mês)
 - **Campos Simplificados**: Interface limpa e focada nos campos essenciais
 - **Sistema de Rubricas**: Aplicação e cópia de rubricas entre funcionários
 - **Descontos Personalizados**: Campo para descontos específicos com descrição
@@ -32,6 +34,7 @@ Sistema completo de gestão de folha de pagamento desenvolvido com Next.js 14, T
 - **Validação de Duplicatas**: Prevenção de holerites duplicados por funcionário/mês/ano
 - **Sistema de Recuperação de Senha**: Reset de senha via email com tokens seguros
 - **Interface Limpa**: Sem valores de referência desnecessários (ex: INSS)
+- **Múltiplos Empréstimos**: Permite cadastrar vários empréstimos do mesmo tipo para um funcionário
 
 ### 📊 Folha de Pagamento (Gestão Consolidada)
 - **Dashboard Executivo**: Visão geral com métricas principais
@@ -65,6 +68,11 @@ Sistema completo de gestão de folha de pagamento desenvolvido com Next.js 14, T
 - **Busca Avançada**: Sistema de busca por funcionário e tipo
 - **PDF Otimizado**: Layout compacto em formato de holerite com duas vias em uma página
 - **Layout Profissional**: Via da empresa e via do funcionário lado a lado
+- **Cópia de Recibos**: Sistema para copiar recibos do mês anterior
+- **Seleção Múltipla**: Checkbox para selecionar vários recibos
+- **Exclusão em Lote**: Excluir múltiplos recibos selecionados
+- **Edição Inteligente**: Campos preenchidos automaticamente ao editar
+- **Headers Fixos**: Cabeçalhos que permanecem visíveis durante o scroll
 
 ### 🏢 Configurações da Empresa
 - **Upload de Logo**: Sistema de upload com drag & drop
@@ -72,14 +80,25 @@ Sistema completo de gestão de folha de pagamento desenvolvido com Next.js 14, T
 - **Integração Visual**: Logo exibida na sidebar e relatórios
 - **Validação de Arquivos**: Suporte a imagens com validação
 
+### 📞 Secretaria
+- **Lista Telefônica**: Gestão de contatos telefônicos
+- **Contatos de Clientes**: Cadastro e organização de clientes
+- **Registro de Ligações**: Sistema para registrar chamadas recebidas
+- **Busca Inteligente**: Filtros por nome, telefone e empresa
+- **Interface Unificada**: Tabs para diferentes funcionalidades
+- **CRUD Completo**: Criação, edição e exclusão de contatos
+
 ### 🎨 Interface e UX
 - **Design Moderno**: Interface limpa e profissional
+- **Tema Escuro/Claro**: Sistema de temas com preferência por usuário
 - **Tema Personalizado**: Cores em tons de cinza e preto
 - **Responsivo**: Funciona perfeitamente em mobile e desktop
 - **Modais Elegantes**: Confirmações com design profissional
 - **Loading States**: Feedback visual durante operações
 - **Toast Notifications**: Notificações de sucesso e erro
 - **Tabs Prominentes**: Interface destacada para funcionalidades principais
+- **Contraste Otimizado**: Cores ajustadas para melhor legibilidade
+- **Headers Fixos**: Cabeçalhos que permanecem visíveis durante o scroll
 
 ## 🛠️ Tecnologias
 
@@ -91,6 +110,8 @@ Sistema completo de gestão de folha de pagamento desenvolvido com Next.js 14, T
 - **Radix UI**: Componentes acessíveis
 - **TanStack Query**: Gerenciamento de estado e cache
 - **Lucide React**: Ícones modernos
+- **next-themes**: Gerenciamento de temas escuro/claro
+- **Sonner**: Sistema de notificações toast
 
 ### Backend
 - **Next.js API Routes**: API integrada
@@ -183,6 +204,8 @@ src/
 │   ├── payroll/                  # Página de holerites
 │   ├── rubrics/                  # Página de rubricas
 │   ├── receipts/                 # Página de recibos
+│   ├── secretaria/               # Página de secretaria
+│   ├── users/                    # Página de usuários
 │   ├── settings/                 # Página de configurações
 │   ├── login/                    # Página de login
 │   └── page.tsx                  # Dashboard
@@ -193,6 +216,8 @@ src/
 │   ├── payroll/                 # Componentes de holerites
 │   ├── rubrics/                 # Componentes de rubricas
 │   ├── receipts/                # Componentes de recibos
+│   ├── secretaria/              # Componentes de secretaria
+│   ├── users/                   # Componentes de usuários
 │   └── dashboard/               # Componentes do dashboard
 ├── lib/                         # Utilitários e configurações
 │   ├── auth.ts                  # Configuração do NextAuth
@@ -288,15 +313,18 @@ src/
 ## 📊 Banco de Dados
 
 ### Tabelas Principais
-- `users` - Usuários do sistema
-- `employees` - Funcionários
-- `payrolls` - Holerites com cálculos automáticos
-- `receipts` - Recibos com tipos dinâmicos
+- `users` - Usuários do sistema com preferências de tema
+- `employees` - Funcionários com CBO e máscaras de entrada
+- `payrolls` - Holerites com cálculos automáticos e salário editável
+- `receipts` - Recibos com tipos dinâmicos e cópia de mês anterior
 - `receipt_types` - Tipos de recibos personalizáveis
 - `payroll_rubrics` - Rubricas de folha de pagamento
-- `employee_rubrics` - Rubricas aplicadas por funcionário
+- `employee_rubrics` - Rubricas aplicadas por funcionário (múltiplos empréstimos)
 - `company_settings` - Configurações da empresa
 - `password_reset_tokens` - Tokens seguros para recuperação de senha
+- `customer_contacts` - Contatos de clientes da secretaria
+- `phone_directory` - Lista telefônica da secretaria
+- `call_logs` - Registro de ligações recebidas
 
 ### Relacionamentos
 - Funcionários → Holerites (1:N)
@@ -347,6 +375,7 @@ EMAIL_APP_PASSWORD="your-app-password"
 
 ### Interface e UX
 - ✅ Modal de confirmação elegante em todo o sistema
+- ✅ Sistema de temas escuro/claro com preferência por usuário
 - ✅ Tema personalizado em tons de cinza e preto
 - ✅ Interface responsiva para mobile e desktop
 - ✅ Loading states e feedback visual
@@ -354,6 +383,8 @@ EMAIL_APP_PASSWORD="your-app-password"
 - ✅ Tabs com destaque visual para funcionalidades principais
 - ✅ Tabelas com alinhamento proporcional e consistente
 - ✅ Cards padronizados com tamanhos de fonte uniformes
+- ✅ Contraste otimizado para melhor legibilidade
+- ✅ Headers fixos que permanecem visíveis durante o scroll
 
 ### Funcionalidades
 - ✅ Sistema de rubricas completo e funcional
@@ -371,6 +402,14 @@ EMAIL_APP_PASSWORD="your-app-password"
 - ✅ Sistema de recuperação de senha via email
 - ✅ Tokens seguros com expiração automática
 - ✅ Interface limpa sem valores de referência desnecessários
+- ✅ Máscaras de entrada para CPF e valores monetários
+- ✅ Campo CBO para classificação profissional
+- ✅ Salário base editável para casos específicos
+- ✅ Múltiplos empréstimos do mesmo tipo por funcionário
+- ✅ Cópia de recibos do mês anterior
+- ✅ Seleção múltipla e exclusão em lote de recibos
+- ✅ Edição inteligente com campos preenchidos automaticamente
+- ✅ Sistema de temas com preferência por usuário
 
 ### Performance e Estabilidade
 - ✅ APIs otimizadas e funcionais
@@ -439,10 +478,16 @@ Para suporte, entre em contato através dos issues do GitHub ou por email.
 
 ### 🎉 Sistema Totalmente Funcional e Profissional!
 
-- ✅ **Sistema Completo** - Folha de pagamento, holerites e recibos
+- ✅ **Sistema Completo** - Folha de pagamento, holerites, recibos e secretaria
 - ✅ **Segurança Robusta** - Recuperação de senha e autenticação segura
 - ✅ **Relatórios Detalhados** - Cards com descontos e proventos separados
 - ✅ **Interface Profissional** - Layout limpo e alinhamento consistente
+- ✅ **Tema Escuro/Claro** - Preferência por usuário com persistência
+- ✅ **Funcionalidades Avançadas** - Cópia de recibos, seleção múltipla, edição inteligente
+- ✅ **Máscaras de Entrada** - CPF e valores monetários formatados automaticamente
+- ✅ **Campo CBO** - Classificação profissional brasileira
+- ✅ **Múltiplos Empréstimos** - Vários empréstimos do mesmo tipo por funcionário
+- ✅ **Headers Fixos** - Cabeçalhos que permanecem visíveis durante o scroll
 - ✅ **Backup Automático** - Script PowerShell incluído
 - ✅ **Migração Simples** - Um arquivo ZIP contém tudo
 - ✅ **Banco PostgreSQL** - Robusto, escalável e profissional

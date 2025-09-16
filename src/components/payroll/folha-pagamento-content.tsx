@@ -58,6 +58,8 @@ export function FolhaPagamentoContent() {
   const [newInssValue, setNewInssValue] = useState('')
   const [editingIrrf, setEditingIrrf] = useState<string | null>(null)
   const [newIrrfValue, setNewIrrfValue] = useState('')
+  const [editingSalary, setEditingSalary] = useState<string | null>(null)
+  const [newSalaryValue, setNewSalaryValue] = useState('')
   const [activeTab, setActiveTab] = useState<'payroll' | 'loans'>('payroll')
 
   // Buscar dados da folha
@@ -124,6 +126,33 @@ export function FolhaPagamentoContent() {
     }
   }
 
+  // Função para atualizar Salário Base
+  const updateSalary = async (payrollId: string, newSalaryValue: string) => {
+    try {
+      const response = await fetch(`/api/payroll/${payrollId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          baseSalary: parseFloat(newSalaryValue) || 0
+        }),
+      })
+
+      if (!response.ok) {
+        throw new Error('Erro ao atualizar salário')
+      }
+
+      // Recarregar dados
+      refetch()
+      setEditingSalary(null)
+      setNewSalaryValue('')
+    } catch (error) {
+      console.error('Erro ao atualizar salário:', error)
+      alert('Erro ao atualizar salário. Tente novamente.')
+    }
+  }
+
   // Função para iniciar edição do INSS
   const startEditingInss = (payrollId: string, currentValue: number) => {
     setEditingInss(payrollId)
@@ -134,6 +163,12 @@ export function FolhaPagamentoContent() {
   const startEditingIrrf = (payrollId: string, currentValue: number) => {
     setEditingIrrf(payrollId)
     setNewIrrfValue(currentValue.toString())
+  }
+
+  // Função para iniciar edição do Salário
+  const startEditingSalary = (payrollId: string, currentValue: number) => {
+    setEditingSalary(payrollId)
+    setNewSalaryValue(currentValue.toString())
   }
 
   // Buscar dados do dashboard
@@ -509,6 +544,12 @@ export function FolhaPagamentoContent() {
                     <div className="flex items-center space-x-4">
                       <div className="text-right space-y-1">
                         <div className="text-sm">
+                          <span className="text-muted-foreground">Base: </span>
+                          <span className="font-medium text-purple-600">
+                            {formatCurrency(payroll.baseSalary)}
+                          </span>
+                        </div>
+                        <div className="text-sm">
                           <span className="text-muted-foreground">Bruto: </span>
                           <span className="font-medium text-green-600">
                             {formatCurrency(payroll.grossSalary)}
@@ -528,6 +569,54 @@ export function FolhaPagamentoContent() {
                         </div>
                       </div>
                       
+                      {/* Botão de edição do Salário Base */}
+                      <div className="flex flex-col items-center space-y-2">
+                        <div className="text-xs text-center">
+                          <div className="text-muted-foreground mb-1">Salário</div>
+                          {editingSalary === payroll.id ? (
+                            <div className="flex items-center space-x-1">
+                              <Input
+                                type="number"
+                                step="0.01"
+                                value={newSalaryValue}
+                                onChange={(e) => setNewSalaryValue(e.target.value)}
+                                className="w-20 h-6 text-xs"
+                                placeholder="0,00"
+                              />
+                              <Button
+                                size="sm"
+                                onClick={() => updateSalary(payroll.id, newSalaryValue)}
+                                className="h-6 px-2 text-xs"
+                              >
+                                ✓
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => setEditingSalary(null)}
+                                className="h-6 px-2 text-xs"
+                              >
+                                ✗
+                              </Button>
+                            </div>
+                          ) : (
+                            <div className="flex items-center space-x-1">
+                              <span className="text-xs font-medium">
+                                {formatCurrency(payroll.baseSalary)}
+                              </span>
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                onClick={() => startEditingSalary(payroll.id, payroll.baseSalary)}
+                                className="h-5 w-5 p-0 text-xs"
+                              >
+                                <Edit3 className="h-3 w-3" />
+                              </Button>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+
                       {/* Botão de edição do INSS */}
                       <div className="flex flex-col items-center space-y-2">
                         <div className="text-xs text-center">

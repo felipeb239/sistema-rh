@@ -23,6 +23,7 @@ import { useState } from 'react'
 import { useCompanySettings } from '@/hooks/use-company-settings'
 import { usePermissions } from '@/hooks/use-permissions'
 import { AccessDeniedModal } from '@/components/ui/access-denied-modal'
+import { ThemeToggle } from '@/components/ui/theme-toggle'
 
 const navigation = [
   { name: 'Folha de Pagamento', href: '/payroll', icon: FileText, module: 'payroll' },
@@ -110,24 +111,11 @@ export function Sidebar() {
                     className="h-16 w-full sm:h-20 lg:h-24 object-contain"
                   />
                 </div>
-                <div className="flex flex-col items-center text-center w-full px-2">
-                  <h1 className="text-[10px] sm:text-xs lg:text-sm font-semibold leading-tight text-foreground max-w-full break-words">
-                    Folha de Pagamento
-                  </h1>
-                </div>
               </Link>
             ) : (
               <Link href="/" onClick={() => setIsOpen(false)} className="flex flex-col items-center space-y-3 w-full hover:opacity-80 transition-opacity cursor-pointer">
                 <div className="flex-shrink-0 flex items-center justify-center h-16 w-full max-w-[200px] sm:h-20 lg:h-24 bg-gradient-to-br from-primary/20 to-primary/10 rounded-xl shadow-sm border">
                   <Building2 className="h-8 w-8 sm:h-10 sm:w-10 lg:h-12 lg:w-12 text-primary" />
-                </div>
-                <div className="flex flex-col items-center text-center w-full px-2">
-                  <h1 className="text-[10px] sm:text-xs lg:text-sm font-semibold leading-tight text-foreground max-w-full break-words">
-                    {companySettings && companySettings.companyName || "Folha de Pagamento"}
-                  </h1>
-                  <p className="text-[9px] sm:text-[10px] lg:text-xs text-muted-foreground/80 font-medium mt-1">
-                    Sistema
-                  </p>
                 </div>
               </Link>
             )}
@@ -210,15 +198,18 @@ export function Sidebar() {
                 </p>
               </div>
             </div>
-            <Button
-              variant="outline"
-              size="sm"
-              className="w-full"
-              onClick={handleLogout}
-            >
-              <LogOut className="mr-2 h-4 w-4" />
-              Sair
-            </Button>
+            <div className="flex gap-2">
+              <ThemeToggle />
+              <Button
+                variant="outline"
+                size="sm"
+                className="flex-1"
+                onClick={handleLogout}
+              >
+                <LogOut className="mr-2 h-4 w-4" />
+                Sair
+              </Button>
+            </div>
           </div>
         </div>
       </div>

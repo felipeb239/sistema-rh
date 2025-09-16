@@ -34,12 +34,10 @@ export async function PUT(
     }
 
     // Buscar rubrica do colaborador
-    const employeeRubric = await prisma.employeeRubric.findUnique({
+    const employeeRubric = await prisma.employeeRubric.findFirst({
       where: {
-        employee_rubric_unique: {
-          employeeId,
-          rubricId
-        }
+        employeeId,
+        rubricId
       }
     })
 
@@ -54,8 +52,8 @@ export async function PUT(
       where: { id: employeeRubric.id },
       data: {
         customName,
-        customValue: customValue ? parseFloat(customValue) : null,
-        customPercentage: customPercentage ? parseFloat(customPercentage) : null,
+        customValue: customValue ? parseFloat(customValue).toString() : null,
+        customPercentage: customPercentage ? parseFloat(customPercentage).toString() : null,
         startDate: startDate ? new Date(startDate) : null,
         endDate: endDate ? new Date(endDate) : null,
         isActive: isActive !== undefined ? isActive : employeeRubric.isActive
@@ -94,12 +92,10 @@ export async function DELETE(
     const { id: employeeId, rubricId } = params
 
     // Buscar rubrica do colaborador
-    const employeeRubric = await prisma.employeeRubric.findUnique({
+    const employeeRubric = await prisma.employeeRubric.findFirst({
       where: {
-        employee_rubric_unique: {
-          employeeId,
-          rubricId
-        }
+        employeeId,
+        rubricId
       }
     })
 

@@ -14,8 +14,8 @@ export default function SecretariaPage() {
       <main className="lg:ml-60 xl:ml-64 2xl:ml-72">
         <div className="p-4 sm:p-6">
           <div className="mb-6">
-            <h1 className="text-3xl font-bold text-gray-900">Secretaria</h1>
-            <p className="text-gray-600 mt-2">
+            <h1 className="text-3xl font-bold text-foreground">Secretaria</h1>
+            <p className="text-muted-foreground mt-2">
               Gerencie a lista telefônica e contatos de clientes
             </p>
           </div>

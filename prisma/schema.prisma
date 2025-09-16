@@ -15,6 +15,7 @@ model User {
   email       String?
   role        String           @default("user")
   status      String           @default("active")
+  theme       String           @default("system")
   createdAt   DateTime         @default(now())
   updatedAt   DateTime         @updatedAt
   level       Int              @default(1)
@@ -29,6 +30,7 @@ model Employee {
   cpf             String?
   position        String?
   department      String?
+  cbo             String?          @map("cbo")
   hireDate        DateTime?        @map("hire_date")
   salary          Decimal?         @db.Decimal(10, 2)
   status          String           @default("active")
@@ -158,7 +160,6 @@ model EmployeeRubric {
   employee         Employee      @relation(fields: [employeeId], references: [id], onDelete: Cascade)
   rubric           PayrollRubric @relation(fields: [rubricId], references: [id], onDelete: Cascade)
 
-  @@unique([employeeId, rubricId], name: "employee_rubric_unique")
   @@map("employee_rubrics")
 }
 

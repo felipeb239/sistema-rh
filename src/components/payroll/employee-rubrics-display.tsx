@@ -61,22 +61,22 @@ export function EmployeeRubricsDisplay({
 
   return (
     <div className="space-y-4">
-      <h3 className="font-semibold text-gray-700">Rubricas Específicas</h3>
+      <h3 className="font-semibold text-foreground">Rubricas Específicas</h3>
       
       {/* Benefícios */}
       {totals.benefits.length > 0 && (
         <div className="space-y-2">
-          <h4 className="text-sm font-medium text-green-700">Proventos</h4>
+          <h4 className="text-sm font-medium text-green-600 dark:text-green-400">Proventos</h4>
           <div className="space-y-1">
             {totals.benefits.map((rubric, index) => (
               <div key={index} className="flex justify-between items-center text-sm">
                 <div className="flex items-center space-x-2">
-                  <span>{rubric.name}</span>
+                  <span className="text-foreground">{rubric.name}</span>
                   <Badge variant="default" className="text-xs">
                     {rubric.type === 'percentage' ? 'Percentual' : 'Fixo'}
                   </Badge>
                 </div>
-                <span className="text-green-600 font-medium">
+                <span className="text-green-600 dark:text-green-400 font-medium">
                   + R$ {rubric.value.toFixed(2)}
                 </span>
               </div>
@@ -88,17 +88,17 @@ export function EmployeeRubricsDisplay({
       {/* Descontos */}
       {totals.discounts.length > 0 && (
         <div className="space-y-2">
-          <h4 className="text-sm font-medium text-red-700">Descontos</h4>
+          <h4 className="text-sm font-medium text-red-600 dark:text-red-400">Descontos</h4>
           <div className="space-y-1">
             {totals.discounts.map((rubric, index) => (
               <div key={index} className="flex justify-between items-center text-sm">
                 <div className="flex items-center space-x-2">
-                  <span>{rubric.name}</span>
+                  <span className="text-foreground">{rubric.name}</span>
                   <Badge variant="destructive" className="text-xs">
                     {rubric.type === 'percentage' ? 'Percentual' : 'Fixo'}
                   </Badge>
                 </div>
-                <span className="text-red-600 font-medium">
+                <span className="text-red-600 dark:text-red-400 font-medium">
                   - R$ {rubric.value.toFixed(2)}
                 </span>
               </div>
@@ -109,26 +109,26 @@ export function EmployeeRubricsDisplay({
 
       {/* Totais */}
       {showTotals && (totals.benefits.length > 0 || totals.discounts.length > 0) && (
-        <div className="border-t pt-2 space-y-1">
+        <div className="border-t border-border pt-2 space-y-1">
           {totals.benefits.length > 0 && (
             <div className="flex justify-between text-sm">
-              <span className="text-green-700">Total de Proventos:</span>
-              <span className="text-green-600 font-medium">
+              <span className="text-green-600 dark:text-green-400">Total de Proventos:</span>
+              <span className="text-green-600 dark:text-green-400 font-medium">
                 + R$ {totals.totalBenefits.toFixed(2)}
               </span>
             </div>
           )}
           {totals.discounts.length > 0 && (
             <div className="flex justify-between text-sm">
-              <span className="text-red-700">Total de Descontos:</span>
-              <span className="text-red-600 font-medium">
+              <span className="text-red-600 dark:text-red-400">Total de Descontos:</span>
+              <span className="text-red-600 dark:text-red-400 font-medium">
                 - R$ {totals.totalDiscounts.toFixed(2)}
               </span>
             </div>
           )}
-          <div className="flex justify-between text-sm font-semibold border-t pt-1">
-            <span>Saldo das Rubricas:</span>
-            <span className={totals.totalBenefits - totals.totalDiscounts >= 0 ? 'text-green-600' : 'text-red-600'}>
+          <div className="flex justify-between text-sm font-semibold border-t border-border pt-1">
+            <span className="text-foreground">Saldo das Rubricas:</span>
+            <span className={totals.totalBenefits - totals.totalDiscounts >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}>
               {totals.totalBenefits - totals.totalDiscounts >= 0 ? '+' : ''}R$ {(totals.totalBenefits - totals.totalDiscounts).toFixed(2)}
             </span>
           </div>

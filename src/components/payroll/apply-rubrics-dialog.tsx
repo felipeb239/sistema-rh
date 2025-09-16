@@ -100,7 +100,7 @@ export function ApplyRubricsDialog({ employeeId, employeeName, onApply }: ApplyR
                       >
                         <span className="font-medium">{rubric.name}</span>
                         {rubric.code && (
-                          <span className="px-2 py-1 text-xs bg-gray-100 rounded">
+                          <span className="px-2 py-1 text-xs bg-muted text-muted-foreground rounded">
                             {rubric.code}
                           </span>
                         )}
@@ -146,7 +146,7 @@ export function ApplyRubricsDialog({ employeeId, employeeName, onApply }: ApplyR
                       >
                         <span className="font-medium">{rubric.name}</span>
                         {rubric.code && (
-                          <span className="px-2 py-1 text-xs bg-gray-100 rounded">
+                          <span className="px-2 py-1 text-xs bg-muted text-muted-foreground rounded">
                             {rubric.code}
                           </span>
                         )}

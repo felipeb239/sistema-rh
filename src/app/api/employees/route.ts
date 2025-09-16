@@ -44,7 +44,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json()
-    const { name, cpf, position, department, hireDate, salary } = body
+    const { name, cpf, position, department, cbo, hireDate, salary } = body
 
     const employee = await prisma.employee.create({
       data: {
@@ -52,6 +52,7 @@ export async function POST(request: NextRequest) {
         cpf,
         position,
         department,
+        cbo,
         hireDate: hireDate ? new Date(hireDate) : null,
         salary: salary ? parseFloat(salary) : null,
       }

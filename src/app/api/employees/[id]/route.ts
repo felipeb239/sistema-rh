@@ -16,7 +16,7 @@ export async function PUT(
 
     const { id } = params
     const body = await request.json()
-    const { name, cpf, position, department, hireDate, salary } = body
+    const { name, cpf, position, department, cbo, hireDate, salary } = body
 
     const employee = await prisma.employee.update({
       where: { id },
@@ -25,6 +25,7 @@ export async function PUT(
         cpf,
         position,
         department,
+        cbo,
         hireDate: hireDate ? new Date(hireDate) : null,
         salary: salary ? parseFloat(salary) : null,
       }

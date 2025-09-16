@@ -261,12 +261,12 @@ export function EmployeeRubricsManager({
                           </div>
                           <div className="flex items-center space-x-4 mt-1">
                             {rubric.customValue && (
-                              <span className="text-sm text-green-600 font-medium">
+                              <span className="text-sm text-green-600 dark:text-green-400 font-medium">
                                 {formatCurrency(rubric.customValue)}
                               </span>
                             )}
                             {rubric.customPercentage && (
-                              <span className="text-sm text-blue-600 font-medium">
+                              <span className="text-sm text-blue-600 dark:text-blue-400 font-medium">
                                 {rubric.customPercentage}%
                               </span>
                             )}

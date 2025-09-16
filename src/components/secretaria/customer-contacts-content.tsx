@@ -195,7 +195,7 @@ export function CustomerContactsContent() {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="text-gray-500">Carregando contatos...</div>
+        <div className="text-muted-foreground">Carregando contatos...</div>
       </div>
     )
   }
@@ -205,8 +205,8 @@ export function CustomerContactsContent() {
       {/* Cabeçalho */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h2 className="text-2xl font-bold text-gray-900">Contatos de Clientes</h2>
-          <p className="text-gray-600">Gerencie os contatos de clientes e fornecedores</p>
+          <h2 className="text-2xl font-bold text-foreground">Contatos de Clientes</h2>
+          <p className="text-muted-foreground">Gerencie os contatos de clientes e fornecedores</p>
         </div>
         
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
@@ -348,7 +348,7 @@ export function CustomerContactsContent() {
 
       {/* Busca */}
       <div className="relative">
-        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
         <Input
           placeholder="Buscar por empresa, pessoa, telefone ou email..."
           value={searchTerm}
@@ -396,12 +396,12 @@ export function CustomerContactsContent() {
                 {/* Telefones */}
                 <div>
                   <div className="flex items-center gap-2 mb-1">
-                    <Phone className="h-4 w-4 text-gray-500" />
+                    <Phone className="h-4 w-4 text-muted-foreground" />
                     <span className="text-sm font-medium">Telefones</span>
                   </div>
                   <div className="space-y-1">
                     {contact.phones.map((phone, index) => (
-                      <div key={index} className="text-sm text-gray-600">
+                      <div key={index} className="text-sm text-muted-foreground">
                         {phone}
                       </div>
                     ))}
@@ -411,12 +411,12 @@ export function CustomerContactsContent() {
                 {/* Emails */}
                 <div>
                   <div className="flex items-center gap-2 mb-1">
-                    <Mail className="h-4 w-4 text-gray-500" />
+                    <Mail className="h-4 w-4 text-muted-foreground" />
                     <span className="text-sm font-medium">Emails</span>
                   </div>
                   <div className="space-y-1">
                     {contact.emails.map((email, index) => (
-                      <div key={index} className="text-sm text-gray-600">
+                      <div key={index} className="text-sm text-muted-foreground">
                         {email}
                       </div>
                     ))}
@@ -426,8 +426,8 @@ export function CustomerContactsContent() {
                 {/* Observações */}
                 {contact.notes && (
                   <div>
-                    <span className="text-sm font-medium text-gray-700">Observações:</span>
-                    <p className="text-sm text-gray-600 mt-1">{contact.notes}</p>
+                    <span className="text-sm font-medium text-foreground">Observações:</span>
+                    <p className="text-sm text-muted-foreground mt-1">{contact.notes}</p>
                   </div>
                 )}
               </div>
@@ -438,11 +438,11 @@ export function CustomerContactsContent() {
 
       {filteredContacts.length === 0 && (
         <div className="text-center py-12">
-          <Building className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-          <h3 className="text-lg font-medium text-gray-900 mb-2">
+          <Building className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+          <h3 className="text-lg font-medium text-foreground mb-2">
             {searchTerm ? 'Nenhum contato encontrado' : 'Nenhum contato cadastrado'}
           </h3>
-          <p className="text-gray-600">
+          <p className="text-muted-foreground">
             {searchTerm 
               ? 'Tente ajustar os termos de busca'
               : 'Comece adicionando um novo contato'

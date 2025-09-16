@@ -48,6 +48,7 @@ export function EmployeeForm({ employee, onClose }: EmployeeFormProps) {
     cpf: '',
     position: '',
     department: '',
+    cbo: '',
     hireDate: '',
     salary: ''
   })
@@ -61,6 +62,7 @@ export function EmployeeForm({ employee, onClose }: EmployeeFormProps) {
         cpf: employee.cpf || '',
         position: employee.position || '',
         department: employee.department || '',
+        cbo: employee.cbo || '',
         hireDate: employee.hireDate ? new Date(employee.hireDate).toISOString().split('T')[0] : '',
         salary: employee.salary?.toString() || ''
       })
@@ -88,7 +90,7 @@ export function EmployeeForm({ employee, onClose }: EmployeeFormProps) {
     
     const submitData = {
       ...formData,
-      salary: formData.salary ? parseFloat(formData.salary) : undefined,
+      salary: formData.salary ? parseFloat(unformatSalary(formData.salary)) : undefined,
       hireDate: formData.hireDate ? new Date(formData.hireDate) : undefined
     }
 
@@ -99,10 +101,58 @@ export function EmployeeForm({ employee, onClose }: EmployeeFormProps) {
     }
   }
 
+  // Função para aplicar máscara de CPF
+  const formatCPF = (value: string) => {
+    // Remove tudo que não é dígito
+    const numbers = value.replace(/\D/g, '')
+    
+    // Aplica a máscara: 000.000.000-00
+    if (numbers.length <= 3) {
+      return numbers
+    } else if (numbers.length <= 6) {
+      return `${numbers.slice(0, 3)}.${numbers.slice(3)}`
+    } else if (numbers.length <= 9) {
+      return `${numbers.slice(0, 3)}.${numbers.slice(3, 6)}.${numbers.slice(6)}`
+    } else {
+      return `${numbers.slice(0, 3)}.${numbers.slice(3, 6)}.${numbers.slice(6, 9)}-${numbers.slice(9, 11)}`
+    }
+  }
+
+  // Função para aplicar máscara de salário (formato brasileiro)
+  const formatSalary = (value: string) => {
+    // Remove tudo que não é dígito
+    const numbers = value.replace(/\D/g, '')
+    
+    if (numbers.length === 0) return ''
+    
+    // Converte para centavos e formata
+    const cents = parseInt(numbers)
+    const real = cents / 100
+    
+    // Formata com separador de milhares e decimais
+    return real.toLocaleString('pt-BR', {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
+    })
+  }
+
+  // Função para remover formatação do salário
+  const unformatSalary = (value: string) => {
+    return value.replace(/\./g, '').replace(',', '.')
+  }
+
   const handleChange = (field: string, value: string) => {
+    let formattedValue = value
+    
+    if (field === 'cpf') {
+      formattedValue = formatCPF(value)
+    } else if (field === 'salary') {
+      formattedValue = formatSalary(value)
+    }
+    
     setFormData(prev => ({
       ...prev,
-      [field]: value
+      [field]: formattedValue
     }))
   }
 
@@ -178,6 +228,16 @@ export function EmployeeForm({ employee, onClose }: EmployeeFormProps) {
               </div>
 
               <div className="space-y-2">
+                <Label htmlFor="cbo">CBO</Label>
+                <Input
+                  id="cbo"
+                  value={formData.cbo}
+                  onChange={(e) => handleChange('cbo', e.target.value)}
+                  placeholder="Digite o código CBO"
+                />
+              </div>
+
+              <div className="space-y-2">
                 <Label htmlFor="hireDate">Data de Admissão</Label>
                 <Input
                   id="hireDate"
@@ -191,8 +251,7 @@ export function EmployeeForm({ employee, onClose }: EmployeeFormProps) {
                 <Label htmlFor="salary">Salário</Label>
                 <Input
                   id="salary"
-                  type="number"
-                  step="0.01"
+                  type="text"
                   value={formData.salary}
                   onChange={(e) => handleChange('salary', e.target.value)}
                   placeholder="0,00"

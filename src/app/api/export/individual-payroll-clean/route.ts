@@ -137,7 +137,7 @@ export async function GET(request: NextRequest) {
                 </tr>
                 <tr>
                   <td><strong>CPF:</strong> ${payroll.employee?.cpf}</td>
-                  <td><strong>CBO:</strong> ${payroll.employee?.position || ''}</td>
+                  <td><strong>CBO:</strong> ${payroll.employee?.cbo || ''}</td>
                 </tr>
               </table>
             </div>

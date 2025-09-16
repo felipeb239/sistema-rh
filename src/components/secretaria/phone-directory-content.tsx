@@ -132,7 +132,7 @@ export function PhoneDirectoryContent() {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="text-gray-500">Carregando contatos...</div>
+        <div className="text-muted-foreground">Carregando contatos...</div>
       </div>
     )
   }
@@ -142,8 +142,8 @@ export function PhoneDirectoryContent() {
       {/* Cabeçalho */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h2 className="text-2xl font-bold text-gray-900">Lista Telefônica</h2>
-          <p className="text-gray-600">Gerencie os contatos telefônicos internos</p>
+          <h2 className="text-2xl font-bold text-foreground">Lista Telefônica</h2>
+          <p className="text-muted-foreground">Gerencie os contatos telefônicos internos</p>
         </div>
         
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
@@ -217,7 +217,7 @@ export function PhoneDirectoryContent() {
 
       {/* Busca */}
       <div className="relative">
-        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
         <Input
           placeholder="Buscar por nome, telefone, departamento ou cargo..."
           value={searchTerm}
@@ -265,11 +265,11 @@ export function PhoneDirectoryContent() {
             <CardContent>
               <div className="space-y-2">
                 <div className="flex items-center gap-2">
-                  <Phone className="h-4 w-4 text-gray-500" />
+                  <Phone className="h-4 w-4 text-muted-foreground" />
                   <span className="text-sm font-medium">{contact.phone}</span>
                 </div>
                 {contact.department && (
-                  <div className="text-sm text-gray-600">
+                  <div className="text-sm text-muted-foreground">
                     <strong>Departamento:</strong> {contact.department}
                   </div>
                 )}
@@ -281,11 +281,11 @@ export function PhoneDirectoryContent() {
 
       {filteredContacts.length === 0 && (
         <div className="text-center py-12">
-          <Phone className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-          <h3 className="text-lg font-medium text-gray-900 mb-2">
+          <Phone className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+          <h3 className="text-lg font-medium text-foreground mb-2">
             {searchTerm ? 'Nenhum contato encontrado' : 'Nenhum contato cadastrado'}
           </h3>
-          <p className="text-gray-600">
+          <p className="text-muted-foreground">
             {searchTerm 
               ? 'Tente ajustar os termos de busca'
               : 'Comece adicionando um novo contato'

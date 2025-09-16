@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import { Checkbox } from '@/components/ui/checkbox'
 import { 
   Plus, 
   Search, 
@@ -19,11 +20,15 @@ import {
   ChevronLeft,
   ChevronRight,
   FileDown,
-  AlertTriangle
+  AlertTriangle,
+  Copy,
+  Trash
 } from 'lucide-react'
 import { formatCurrency, formatDate } from '@/lib/utils'
 import { ReceiptForm } from './receipt-form'
+import { CopyReceiptsDialog } from './copy-receipts-dialog'
 import { Receipt, Employee } from '@/types'
+import { toast } from 'sonner'
 
 async function fetchReceipts(page: number = 1, year?: number, month?: number) {
   const params = new URLSearchParams({ page: page.toString() })
@@ -77,6 +82,9 @@ export function ReceiptsContent() {
   const [isExporting, setIsExporting] = useState<string | null>(null)
   const [showDeleteModal, setShowDeleteModal] = useState(false)
   const [receiptToDelete, setReceiptToDelete] = useState<string | null>(null)
+  const [showCopyModal, setShowCopyModal] = useState(false)
+  const [selectedReceipts, setSelectedReceipts] = useState<string[]>([])
+  const [showBulkDeleteModal, setShowBulkDeleteModal] = useState(false)
   const queryClient = useQueryClient()
 
   const { data: receiptsData, isLoading } = useQuery({
@@ -89,7 +97,7 @@ export function ReceiptsContent() {
     queryFn: () => fetchReceiptStats(selectedYear, selectedMonth),
   })
 
-  const receipts = receiptsData?.data || []
+  const receipts = receiptsData?.receipts || []
   const pagination = receiptsData?.pagination || { page: 1, totalPages: 1, totalReceipts: 0 }
   const stats = statsData || { totalReceipts: 0, totalValue: 0, averageValue: 0 }
 
@@ -197,7 +205,7 @@ export function ReceiptsContent() {
       }
     } catch (error) {
       console.error('Export error:', error)
-      alert('Erro ao exportar recibo. Tente novamente.')
+      toast.error('Erro ao exportar recibo. Tente novamente.')
     } finally {
       setIsExporting(null)
     }
@@ -226,7 +234,7 @@ export function ReceiptsContent() {
       }
     } catch (error) {
       console.error('Erro ao exportar recibos em massa:', error)
-      alert('Erro ao exportar recibos. Tente novamente.')
+      toast.error('Erro ao exportar recibos. Tente novamente.')
     } finally {
       setIsExporting(null)
     }
@@ -234,6 +242,53 @@ export function ReceiptsContent() {
 
   const getReceiptTypeLabel = (receipt: any) => {
     return receipt.type?.name || 'Tipo não encontrado'
+  }
+
+  // Funções para seleção múltipla
+  const handleSelectAll = (checked: boolean) => {
+    if (checked) {
+      setSelectedReceipts(filteredReceipts.map((receipt: Receipt) => receipt.id))
+    } else {
+      setSelectedReceipts([])
+    }
+  }
+
+  const handleSelectReceipt = (receiptId: string, checked: boolean) => {
+    if (checked) {
+      setSelectedReceipts(prev => [...prev, receiptId])
+    } else {
+      setSelectedReceipts(prev => prev.filter(id => id !== receiptId))
+    }
+  }
+
+  const handleBulkDelete = async () => {
+    if (selectedReceipts.length === 0) {
+      toast.error('Selecione pelo menos um recibo para excluir')
+      return
+    }
+
+    try {
+      const response = await fetch('/api/receipts/bulk-delete', {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ receiptIds: selectedReceipts }),
+      })
+
+      if (!response.ok) {
+        throw new Error('Erro ao excluir recibos')
+      }
+
+      queryClient.invalidateQueries({ queryKey: ['receipts'] })
+      queryClient.invalidateQueries({ queryKey: ['receipt-stats'] })
+      setSelectedReceipts([])
+      setShowBulkDeleteModal(false)
+      toast.success(`${selectedReceipts.length} recibo(s) excluído(s) com sucesso!`)
+    } catch (error) {
+      console.error('Erro ao excluir recibos:', error)
+      toast.error('Erro ao excluir recibos. Tente novamente.')
+    }
   }
 
   if (showForm) {
@@ -248,18 +303,35 @@ export function ReceiptsContent() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex justify-between items-center">
-        <div>
-          <h1 className="text-3xl font-bold">Recibos</h1>
-          <p className="text-muted-foreground">
-            Gerencie os recibos de vale transporte e alimentação
-          </p>
+      {/* Header Fixo */}
+      <div className="sticky top-0 z-50 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b pb-6">
+        <div className="flex justify-between items-center">
+          <div>
+            <h1 className="text-3xl font-bold">Recibos</h1>
+            <p className="text-muted-foreground">
+              Gerencie os recibos de vale transporte e alimentação
+            </p>
+          </div>
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={() => setShowCopyModal(true)}>
+              <Copy className="mr-2 h-4 w-4" />
+              Copiar do Mês Anterior
+            </Button>
+            {selectedReceipts.length > 0 && (
+              <Button 
+                variant="destructive" 
+                onClick={() => setShowBulkDeleteModal(true)}
+              >
+                <Trash className="mr-2 h-4 w-4" />
+                Excluir Selecionados ({selectedReceipts.length})
+              </Button>
+            )}
+            <Button onClick={() => setShowForm(true)}>
+              <Plus className="mr-2 h-4 w-4" />
+              Novo Recibo
+            </Button>
+          </div>
         </div>
-        <Button onClick={() => setShowForm(true)}>
-          <Plus className="mr-2 h-4 w-4" />
-          Novo Recibo
-        </Button>
       </div>
 
       {/* Search and Filters */}
@@ -329,6 +401,7 @@ export function ReceiptsContent() {
                 </SelectContent>
               </Select>
             </div>
+
           </div>
         </CardContent>
       </Card>
@@ -417,13 +490,27 @@ export function ReceiptsContent() {
 
       {/* Receipts List */}
       <Card>
-        <CardHeader>
-          <CardTitle>Lista de Recibos</CardTitle>
-          <CardDescription>
-            {pagination.totalReceipts} recibo(s) total • Página {pagination.page} de {pagination.totalPages} • Mostrando {filteredReceipts.length} recibo(s)
-          </CardDescription>
+        <CardHeader className="sticky top-24 z-40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b">
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle>Lista de Recibos</CardTitle>
+              <CardDescription>
+                {pagination.totalReceipts} recibo(s) total • Página {pagination.page} de {pagination.totalPages} • Mostrando {filteredReceipts.length} recibo(s)
+              </CardDescription>
+            </div>
+            <div className="flex items-center space-x-2">
+              <Checkbox
+                id="select-all-receipts"
+                checked={selectedReceipts.length === filteredReceipts.length && filteredReceipts.length > 0}
+                onCheckedChange={handleSelectAll}
+              />
+              <Label htmlFor="select-all-receipts" className="text-sm font-medium">
+                Selecionar Todos ({selectedReceipts.length}/{filteredReceipts.length})
+              </Label>
+            </div>
+          </div>
         </CardHeader>
-        <CardContent>
+        <CardContent className="pt-6">
           {isLoading ? (
             <div className="flex items-center justify-center h-32">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
@@ -433,23 +520,31 @@ export function ReceiptsContent() {
               {filteredReceipts.map((receipt: Receipt) => (
                 <div
                   key={receipt.id}
-                  className="flex items-center justify-between p-4 border rounded-lg hover:bg-accent/50 transition-colors"
+                  className={`flex items-center justify-between p-4 border rounded-lg hover:bg-accent/50 transition-colors ${
+                    selectedReceipts.includes(receipt.id) ? 'bg-primary/5 border-primary' : ''
+                  }`}
                 >
-                  <div className="flex-1">
-                    <div className="flex items-center space-x-4">
-                      <div className="w-10 h-10 bg-primary rounded-full flex items-center justify-center">
-                        <span className="text-sm font-medium text-primary-foreground">
-                          {receipt.employee?.name?.charAt(0).toUpperCase() || 'R'}
-                        </span>
-                      </div>
-                      <div>
-                        <h3 className="font-medium">{receipt.employee?.name || 'Funcionário não encontrado'}</h3>
-                        <p className="text-sm text-muted-foreground">
-                          {getReceiptTypeLabel(receipt)} • {receipt.month}/{receipt.year}
-                        </p>
-                        <p className="text-xs text-muted-foreground">
-                          {receipt.days} dias • {formatCurrency(Number(receipt.dailyValue))}/dia
-                        </p>
+                  <div className="flex items-center space-x-3">
+                    <Checkbox
+                      checked={selectedReceipts.includes(receipt.id)}
+                      onCheckedChange={(checked) => handleSelectReceipt(receipt.id, checked as boolean)}
+                    />
+                    <div className="flex-1">
+                      <div className="flex items-center space-x-4">
+                        <div className="w-10 h-10 bg-primary rounded-full flex items-center justify-center">
+                          <span className="text-sm font-medium text-primary-foreground">
+                            {receipt.employee?.name?.charAt(0).toUpperCase() || 'R'}
+                          </span>
+                        </div>
+                        <div>
+                          <h3 className="font-medium">{receipt.employee?.name || 'Funcionário não encontrado'}</h3>
+                          <p className="text-sm text-muted-foreground">
+                            {getReceiptTypeLabel(receipt)} • {receipt.month}/{receipt.year}
+                          </p>
+                          <p className="text-xs text-muted-foreground">
+                            {receipt.days} dias • {formatCurrency(Number(receipt.dailyValue))}/dia
+                          </p>
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -596,6 +691,39 @@ export function ReceiptsContent() {
               className="w-full sm:w-auto"
             >
               Excluir
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Modal de Copiar Recibos */}
+      <CopyReceiptsDialog
+        open={showCopyModal}
+        onClose={() => setShowCopyModal(false)}
+        currentMonth={selectedMonth}
+        currentYear={selectedYear}
+      />
+
+      {/* Modal de Confirmação de Exclusão em Lote */}
+      <Dialog open={showBulkDeleteModal} onOpenChange={setShowBulkDeleteModal}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Trash2 className="h-5 w-5 text-destructive" />
+              Excluir Recibos Selecionados
+            </DialogTitle>
+            <DialogDescription>
+              Tem certeza que deseja excluir {selectedReceipts.length} recibo(s) selecionado(s)? 
+              Esta ação não pode ser desfeita.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowBulkDeleteModal(false)}>
+              Cancelar
+            </Button>
+            <Button variant="destructive" onClick={handleBulkDelete}>
+              <Trash2 className="mr-2 h-4 w-4" />
+              Excluir {selectedReceipts.length} Recibo(s)
             </Button>
           </DialogFooter>
         </DialogContent>

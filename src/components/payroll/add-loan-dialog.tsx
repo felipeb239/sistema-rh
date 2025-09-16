@@ -26,6 +26,7 @@ export function AddLoanDialog({ onLoanAdded }: AddLoanDialogProps) {
   const [selectedEmployeeId, setSelectedEmployeeId] = useState('')
   const [loanName, setLoanName] = useState('')
   const [totalAmount, setTotalAmount] = useState('')
+  const [installmentValue, setInstallmentValue] = useState('')
   const [totalInstallments, setTotalInstallments] = useState('')
   const [currentInstallment, setCurrentInstallment] = useState('')
   const [isCreating, setIsCreating] = useState(false)
@@ -59,6 +60,11 @@ export function AddLoanDialog({ onLoanAdded }: AddLoanDialogProps) {
   )
 
   const calculateInstallmentValue = () => {
+    // Se o valor da parcela foi informado, usar ele
+    if (installmentValue) {
+      return parseFloat(installmentValue.replace(',', '.')).toFixed(2)
+    }
+    // Senão, calcular baseado no valor total
     if (totalAmount && totalInstallments) {
       const amount = parseFloat(totalAmount.replace(',', '.'))
       const installments = parseInt(totalInstallments)
@@ -67,33 +73,52 @@ export function AddLoanDialog({ onLoanAdded }: AddLoanDialogProps) {
     return '0,00'
   }
 
-  const calculateRemainingAmount = () => {
-    if (totalAmount && totalInstallments && currentInstallment) {
-      const amount = parseFloat(totalAmount.replace(',', '.'))
-      const current = parseInt(currentInstallment)
-      const installmentValue = amount / parseInt(totalInstallments)
-      return Math.max(0, amount - ((current - 1) * installmentValue)).toFixed(2)
+  const calculateTotalAmount = () => {
+    // Se valor da parcela e total de parcelas foram informados, calcular o total
+    if (installmentValue && totalInstallments) {
+      const value = parseFloat(installmentValue.replace(',', '.'))
+      const installments = parseInt(totalInstallments)
+      return (value * installments).toFixed(2)
     }
+    // Senão, usar o valor total informado
     return totalAmount || '0,00'
   }
 
+  const calculateRemainingAmount = () => {
+    const total = parseFloat(calculateTotalAmount().replace(',', '.'))
+    const current = parseInt(currentInstallment)
+    const installments = parseInt(totalInstallments)
+    const value = parseFloat(calculateInstallmentValue().replace(',', '.'))
+    
+    if (total && current && installments && value) {
+      return Math.max(0, total - ((current - 1) * value)).toFixed(2)
+    }
+    return total || '0,00'
+  }
+
   const handleSubmit = async () => {
-    if (!selectedEmployeeId || !loanName || !totalAmount || !totalInstallments || !currentInstallment) {
+    if (!selectedEmployeeId || !loanName || !totalInstallments || !currentInstallment) {
       alert('Preencha todos os campos obrigatórios')
       return
     }
 
-    const amount = parseFloat(totalAmount.replace(',', '.'))
+    // Verificar se pelo menos um dos valores (total ou parcela) foi informado
+    if (!totalAmount && !installmentValue) {
+      alert('Informe o valor total ou o valor da parcela')
+      return
+    }
+
+    const amount = parseFloat(calculateTotalAmount().replace(',', '.'))
     const installments = parseInt(totalInstallments)
     const current = parseInt(currentInstallment)
+    const value = parseFloat(calculateInstallmentValue().replace(',', '.'))
     
-    if (amount <= 0 || installments <= 0 || current <= 0 || current > installments) {
+    if (amount <= 0 || installments <= 0 || current <= 0 || current > installments || value <= 0) {
       alert('Valores inválidos')
       return
     }
 
-    const installmentValue = amount / installments
-    const remainingAmount = Math.max(0, amount - ((current - 1) * installmentValue))
+    const remainingAmount = Math.max(0, amount - ((current - 1) * value))
 
     // Criar customName com informações do empréstimo
     const customName = `${loanName} - ${formatCurrency(amount)} - Parcela ${current}/${installments} - Restante: ${formatCurrency(remainingAmount)}`
@@ -148,7 +173,7 @@ export function AddLoanDialog({ onLoanAdded }: AddLoanDialogProps) {
         body: JSON.stringify({
           rubricId,
           customName,
-          customValue: installmentValue,
+          customValue: value,
           isActive: true
         }),
       })
@@ -168,6 +193,7 @@ export function AddLoanDialog({ onLoanAdded }: AddLoanDialogProps) {
       setSelectedEmployeeId('')
       setLoanName('')
       setTotalAmount('')
+      setInstallmentValue('')
       setTotalInstallments('')
       setCurrentInstallment('')
       setOpen(false)
@@ -231,9 +257,9 @@ export function AddLoanDialog({ onLoanAdded }: AddLoanDialogProps) {
             />
           </div>
 
-          <div className="grid grid-cols-3 gap-4">
+          <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="totalAmount">Valor Total *</Label>
+              <Label htmlFor="totalAmount">Valor Total</Label>
               <Input
                 id="totalAmount"
                 value={totalAmount}
@@ -241,8 +267,27 @@ export function AddLoanDialog({ onLoanAdded }: AddLoanDialogProps) {
                 placeholder="5000,00"
                 type="text"
               />
+              <p className="text-xs text-muted-foreground">
+                Ou informe o valor da parcela abaixo
+              </p>
             </div>
 
+            <div className="space-y-2">
+              <Label htmlFor="installmentValue">Valor da Parcela</Label>
+              <Input
+                id="installmentValue"
+                value={installmentValue}
+                onChange={(e) => setInstallmentValue(e.target.value)}
+                placeholder="416,67"
+                type="text"
+              />
+              <p className="text-xs text-muted-foreground">
+                Será calculado automaticamente se não informado
+              </p>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="totalInstallments">Total Parcelas *</Label>
               <Input
@@ -269,7 +314,7 @@ export function AddLoanDialog({ onLoanAdded }: AddLoanDialogProps) {
             </div>
           </div>
 
-          {totalAmount && totalInstallments && currentInstallment && (
+          {(totalAmount || installmentValue) && totalInstallments && currentInstallment && (
             <div className="p-3 bg-muted rounded-lg">
               <div className="text-sm font-medium text-muted-foreground mb-1">
                 Resumo do Empréstimo:
@@ -278,7 +323,7 @@ export function AddLoanDialog({ onLoanAdded }: AddLoanDialogProps) {
                 <div>Valor por parcela: <strong>{formatCurrency(parseFloat(calculateInstallmentValue()))}</strong></div>
                 <div>Parcela atual: <strong>{currentInstallment}/{totalInstallments}</strong></div>
                 <div>Valor restante: <strong>{formatCurrency(parseFloat(calculateRemainingAmount()))}</strong></div>
-                <div>Valor total: <strong>{formatCurrency(parseFloat(totalAmount.replace(',', '.')))}</strong></div>
+                <div>Valor total: <strong>{formatCurrency(parseFloat(calculateTotalAmount()))}</strong></div>
               </div>
             </div>
           )}
@@ -296,7 +341,7 @@ export function AddLoanDialog({ onLoanAdded }: AddLoanDialogProps) {
           <Button
             type="button"
             onClick={handleSubmit}
-            disabled={isCreating || !selectedEmployeeId || !loanName || !totalAmount || !totalInstallments || !currentInstallment}
+            disabled={isCreating || !selectedEmployeeId || !loanName || !totalInstallments || !currentInstallment || (!totalAmount && !installmentValue)}
           >
             {isCreating ? 'Criando...' : 'Criar Empréstimo'}
           </Button>

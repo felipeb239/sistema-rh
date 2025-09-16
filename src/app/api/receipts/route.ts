@@ -31,7 +31,17 @@ export async function GET(request: NextRequest) {
 
     const receipts = await prisma.receipt.findMany({
       where,
-      include: {
+      select: {
+        id: true,
+        employeeId: true,
+        typeId: true,
+        month: true,
+        year: true,
+        dailyValue: true,
+        days: true,
+        value: true,
+        createdAt: true,
+        updatedAt: true,
         employee: {
           select: {
             id: true,
@@ -55,7 +65,7 @@ export async function GET(request: NextRequest) {
 
 
     return NextResponse.json({
-      data: receipts,
+      receipts: receipts,
       pagination: {
         page,
         limit,
